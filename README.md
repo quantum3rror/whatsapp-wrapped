@@ -93,9 +93,9 @@ The script will:
 ~/Library/Application Support/MobileSync/Backup/
 ```
 
-**Windows (experimental - not tested)**
+**Windows (Apple Devices app - experimental)**
 ```
-%APPDATA%/Apple Computer/MobileSync/Backup
+C:\Users\<USER>\Apple\MobileSync\Backup
 ```
 
 **Linux (experimental - not tested)**

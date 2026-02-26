@@ -4,7 +4,7 @@ WhatsApp Wrapped MVP - Analyze WhatsApp conversations from iOS backups
 
 Supported Platforms:
     - macOS (Darwin): ~/Library/Application Support/MobileSync/Backup
-    - Windows: %APPDATA%/Apple Computer/MobileSync/Backup
+    - Windows: ~/Apple/MobileSync/Backup (Apple Devices app, formerly iTunes)
     - Linux: ~/.config/apple-mobile-sync/Backup
 
 Permission Requirements (macOS):
@@ -37,7 +37,7 @@ APPLE_TIMESTAMP_OFFSET = 978307200
 # iOS backup locations by platform
 BACKUP_LOCATIONS = {
     'darwin': '~/Library/Application Support/MobileSync/Backup',
-    'windows': '%APPDATA%/Apple Computer/MobileSync/Backup',
+    'windows': '~/Apple/MobileSync/Backup',  # Apple Devices app
     'linux': '~/.config/apple-mobile-sync/Backup'
 }
 
@@ -49,10 +49,8 @@ def get_backup_locations():
     if system == 'darwin':
         return [Path.home() / "Library" / "Application Support" / "MobileSync" / "Backup"]
     elif system == 'windows':
-        appdata = os.environ.get('APPDATA', '')
-        if appdata:
-            return [Path(appdata) / "Apple Computer" / "MobileSync" / "Backup"]
-        return []
+        # Apple Devices app (formerly iTunes) uses ~/Apple/MobileSync/Backup
+        return [Path.home() / "Apple" / "MobileSync" / "Backup"]
     elif system == 'linux':
         return [Path.home() / ".config" / "apple-mobile-sync" / "Backup"]
     else:
@@ -76,12 +74,12 @@ def get_platform_fix_instructions():
     elif system == 'windows':
         return """
 💡 To fix this on Windows:
-   1. Right-click Command Prompt or PowerShell
-   2. Select "Run as Administrator"
-   3. Navigate to this folder and try again
+   1. Open Apple Devices app (formerly iTunes)
+   2. Verify your device has been backed up
+   3. Check backup location: C:\\Users\\<YourName>\\Apple\\MobileSync\\Backup
 
 💡 Alternative: Manually extract WhatsApp database
-   Use a tool like iMazing, 3uTools, or iPhone Backup Extractor
+   Use a tool like iMazing or 3uTools
    Then run with --db flag:
    python whatsapp_wrapped_mvp.py --db C:\\path\\to\\ChatStorage.sqlite"""
     else:
