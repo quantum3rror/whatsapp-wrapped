@@ -23,7 +23,7 @@ import sqlite3
 import os
 import sys
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 from collections import defaultdict, Counter
 import json
 import argparse
@@ -40,6 +40,9 @@ BACKUP_LOCATIONS = {
     'windows': '~/Apple/MobileSync/Backup',  # Apple Devices app
     'linux': '~/.config/apple-mobile-sync/Backup'
 }
+
+# Platform detection for Windows-specific timestamp handling
+_IS_WINDOWS = platform.system() == 'Windows'
 
 def get_backup_locations():
     """Get iOS backup locations for the current platform"""
@@ -277,12 +280,25 @@ def find_whatsapp_db(backup_path, verbose=True):
 
     return None, None
 
-def apple_timestamp_to_datetime(apple_timestamp):
-    """Convert Apple Core Data timestamp to datetime"""
+def _apple_timestamp_to_datetime_windows(apple_timestamp):
+    """Windows: Use timedelta (fromtimestamp has limited range)"""
+    if apple_timestamp is None:
+        return None
+    unix_timestamp = apple_timestamp + APPLE_TIMESTAMP_OFFSET
+    return datetime(1970, 1, 1) + timedelta(seconds=unix_timestamp)
+
+def _apple_timestamp_to_datetime_unix(apple_timestamp):
+    """Unix (macOS/Linux): Use fromtimestamp (fully supported)"""
     if apple_timestamp is None:
         return None
     unix_timestamp = apple_timestamp + APPLE_TIMESTAMP_OFFSET
     return datetime.fromtimestamp(unix_timestamp)
+
+def apple_timestamp_to_datetime(apple_timestamp):
+    """Convert Apple Core Data timestamp to datetime (platform-aware)"""
+    if _IS_WINDOWS:
+        return _apple_timestamp_to_datetime_windows(apple_timestamp)
+    return _apple_timestamp_to_datetime_unix(apple_timestamp)
 
 def get_year_timestamp_bounds(year):
     """Get Apple timestamp bounds for a given year"""
