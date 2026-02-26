@@ -1,6 +1,22 @@
 #!/usr/bin/env python3
 """
-WhatsApp Wrapped MVP - Simple script to analyze WhatsApp data from iOS backup
+WhatsApp Wrapped MVP - Analyze WhatsApp conversations from iOS backups
+
+Supported Platforms:
+    - macOS (Darwin): ~/Library/Application Support/MobileSync/Backup
+    - Windows: %APPDATA%/Apple Computer/MobileSync/Backup
+    - Linux: ~/.config/apple-mobile-sync/Backup
+
+Permission Requirements (macOS):
+    Terminal needs Full Disk Access to read iOS backups:
+    1. System Settings → Privacy & Security → Full Disk Access
+    2. Add your terminal app (Terminal, iTerm2, etc.)
+    3. Restart terminal and try again
+
+Usage Examples:
+    python whatsapp_wrapped_mvp.py --list-backups              # List all backups
+    python whatsapp_wrapped_mvp.py --year 2025                 # Analyze 2025
+    python whatsapp_wrapped_mvp.py --db /path/to/ChatStorage.sqlite  # Use specific DB
 """
 
 import sqlite3
@@ -11,55 +27,257 @@ from datetime import datetime
 from collections import defaultdict, Counter
 import json
 import argparse
+import platform
 from jinja2 import Template
+import plistlib
 
 # Apple Core Data timestamp starts from 2001-01-01 instead of Unix epoch (1970-01-01)
 APPLE_TIMESTAMP_OFFSET = 978307200
 
-def find_ios_backups():
-    """Find iOS backups on macOS"""
-    backup_path = Path.home() / "Library" / "Application Support" / "MobileSync" / "Backup"
+# iOS backup locations by platform
+BACKUP_LOCATIONS = {
+    'darwin': '~/Library/Application Support/MobileSync/Backup',
+    'windows': '%APPDATA%/Apple Computer/MobileSync/Backup',
+    'linux': '~/.config/apple-mobile-sync/Backup'
+}
 
-    if not backup_path.exists():
-        print(f"❌ No iOS backups found at {backup_path}")
+def get_backup_locations():
+    """Get iOS backup locations for the current platform"""
+    system = platform.system().lower()
+
+    # Map platform.system() to our keys
+    if system == 'darwin':
+        return [Path.home() / "Library" / "Application Support" / "MobileSync" / "Backup"]
+    elif system == 'windows':
+        appdata = os.environ.get('APPDATA', '')
+        if appdata:
+            return [Path(appdata) / "Apple Computer" / "MobileSync" / "Backup"]
         return []
+    elif system == 'linux':
+        return [Path.home() / ".config" / "apple-mobile-sync" / "Backup"]
+    else:
+        return []
+
+def get_platform_fix_instructions():
+    """Get platform-specific instructions for fixing permission/access issues"""
+    system = platform.system().lower()
+
+    if system == 'darwin':
+        return """
+💡 To fix this on macOS:
+   1. Open System Settings → Privacy & Security → Full Disk Access
+   2. Add Terminal (or your terminal app, e.g., iTerm2)
+   3. Restart Terminal and try again
+
+💡 Alternative: Manually extract WhatsApp database
+   Use a tool like iMazing, 3uTools, or iPhone Backup Extractor
+   Then run with --db flag:
+   python whatsapp_wrapped_mvp.py --db /path/to/ChatStorage.sqlite"""
+    elif system == 'windows':
+        return """
+💡 To fix this on Windows:
+   1. Right-click Command Prompt or PowerShell
+   2. Select "Run as Administrator"
+   3. Navigate to this folder and try again
+
+💡 Alternative: Manually extract WhatsApp database
+   Use a tool like iMazing, 3uTools, or iPhone Backup Extractor
+   Then run with --db flag:
+   python whatsapp_wrapped_mvp.py --db C:\\path\\to\\ChatStorage.sqlite"""
+    else:
+        return """
+💡 Alternative: Manually extract WhatsApp database
+   Use a tool like iMazing or libimobiletools
+   Then run with --db flag:
+   python whatsapp_wrapped_mvp.py --db /path/to/ChatStorage.sqlite"""
+
+def find_ios_backups(verbose=True):
+    """Find iOS backups and return metadata (path, device name, date, last modified)"""
+    locations = get_backup_locations()
+    backups = []
+    system = platform.system().lower()
+
+    if not locations:
+        if verbose:
+            print(f"⚠️  Unsupported platform: {system}")
+            print(f"💡 Use --db flag to provide ChatStorage.sqlite manually")
+        return []
+
+    for base_path in locations:
+        base_path = base_path.expanduser()
+
+        if not base_path.exists():
+            continue
+
+        try:
+            for backup_dir in base_path.iterdir():
+                if not backup_dir.is_dir():
+                    continue
+
+                # Try to get device info from Info.plist
+                info_plist = backup_dir / "Info.plist"
+                device_name = None
+                backup_date = None
+
+                if info_plist.exists():
+                    try:
+                        with open(info_plist, 'rb') as f:
+                            plist_data = plistlib.load(f)
+                            device_name = plist_data.get('Device Name', plist_data.get('Display Name', 'Unknown'))
+                            # Get last backup date
+                            backup_date = plist_data.get('Last Backup Date')
+                    except Exception:
+                        pass
+
+                # Fallback to directory modification time
+                if not backup_date:
+                    try:
+                        backup_date = datetime.fromtimestamp(backup_dir.stat().st_mtime)
+                    except Exception:
+                        backup_date = None
+
+                # Check if this looks like a valid backup (has Manifest.plist or files)
+                manifest = backup_dir / "Manifest.plist"
+                status = "valid" if manifest.exists() else "incomplete"
+
+                backups.append({
+                    'path': backup_dir,
+                    'device_name': device_name or backup_dir.name[:8],
+                    'backup_date': backup_date,
+                    'status': status,
+                    'id': backup_dir.name
+                })
+
+        except PermissionError:
+            if verbose:
+                print(f"❌ Permission denied accessing {base_path}")
+                print(get_platform_fix_instructions())
+        except Exception as e:
+            if verbose:
+                print(f"⚠️  Error accessing {base_path}: {e}")
+
+    # Sort by backup date (newest first)
+    backups.sort(key=lambda b: b['backup_date'] or datetime.min, reverse=True)
+
+    return backups
+
+def list_backups():
+    """List all discovered iOS backups with details"""
+    backups = find_ios_backups(verbose=False)
+    system = platform.system().lower()
+
+    if not backups:
+        print("❌ No iOS backups found")
+        print(f"\nExpected location on {system.title()}:")
+        for loc in get_backup_locations():
+            print(f"  {loc.expanduser()}")
+        print(get_platform_fix_instructions())
+        return
+
+    print(f"✅ Found {len(backups)} iOS backup(s):\n")
+
+    for i, backup in enumerate(backups, 1):
+        date_str = backup['backup_date'].strftime('%Y-%m-%d %H:%M') if backup['backup_date'] else 'Unknown'
+        status_icon = "✓" if backup['status'] == "valid" else "⚠️"
+
+        print(f"{status_icon} [{i}] {backup['device_name']}")
+        print(f"     ID: {backup['id']}")
+        print(f"     Date: {date_str}")
+        print(f"     Path: {backup['path']}")
+        if backup['status'] != "valid":
+            print(f"     Status: {backup['status']} (may not contain all data)")
+        print()
+
+    # Show backup location
+    print(f"Backups searched in:")
+    for loc in get_backup_locations():
+        print(f"  {loc.expanduser()}")
+
+def find_whatsapp_db(backup_path, verbose=True):
+    """Find WhatsApp ChatStorage.sqlite in iOS backup
+
+    Searches multiple known hash patterns and locations.
+    Returns (Path, description) or (None, None).
+    """
+    # Known WhatsApp database hashes for ChatStorage.sqlite
+    # Different iOS versions/WhatsApp versions may use different hashes
+    db_hashes = [
+        "7c7fba66680ef796b916b067077cc246adacf01d",  # Common hash
+        "a31097e8a08d1f86658ee3f0a81decb7f3c59837",  # Alternate hash
+    ]
+
+    # Also check for any file ending in .sqlite that might be the database
+    potential_dbs = []
+
+    # Try known hashes first (fast path)
+    for db_hash in db_hashes:
+        # Direct location
+        db_file = backup_path / db_hash
+        if db_file.exists():
+            return db_file, "known hash"
+
+        # Check in hash-prefixed subfolders (some backup formats)
+        prefix = db_hash[:2]
+        db_file = backup_path / prefix / db_hash
+        if db_file.exists():
+            return db_file, f"hash subfolder ({prefix})"
+
+    # Thorough search - scan for any .sqlite or .db files
+    if verbose:
+        print("   Scanning backup directory for WhatsApp database...")
 
     try:
-        backups = []
-        for backup_dir in backup_path.iterdir():
-            if backup_dir.is_dir():
-                info_plist = backup_dir / "Info.plist"
-                if info_plist.exists():
-                    backups.append(backup_dir)
-        return backups
-    except PermissionError:
-        print(f"❌ Permission denied accessing {backup_path}")
-        print("\n💡 To fix this on macOS:")
-        print("   1. Open System Preferences → Privacy & Security → Full Disk Access")
-        print("   2. Add Terminal (or your terminal app)")
-        print("   3. Restart Terminal and try again")
-        print("\n💡 Alternative: Manually extract WhatsApp database")
-        print("   Use a tool like iMazing or manually locate ChatStorage.sqlite")
-        return []
+        # First check Manifest.plist to find file mapping
+        manifest = backup_path / "Manifest.plist"
+        if manifest.exists():
+            try:
+                with open(manifest, 'rb') as f:
+                    manifest_data = plistlib.load(f)
+                    # The manifest contains file metadata; we can check for WhatsApp files
+                    if verbose:
+                        print("   ✓ Found backup manifest")
+            except Exception:
+                pass
 
-def find_whatsapp_db(backup_path):
-    """Find WhatsApp ChatStorage.sqlite in iOS backup"""
-    # WhatsApp database hash for ChatStorage.sqlite
-    # Domain: AppDomainGroup-group.net.whatsapp.WhatsApp.shared
-    # File: ChatStorage.sqlite
-    db_hash = "7c7fba66680ef796b916b067077cc246adacf01d"
+        # Search for SQLite files in the backup
+        for item in backup_path.rglob("*.sqlite"):
+            # Check if this might be a WhatsApp database
+            # ChatStorage.sqlite or variations
+            if any(name in str(item).lower() for name in ["chatstorage", "whatsapp", "7c7fba"]):
+                return item, "filename match"
 
-    db_file = backup_path / db_hash
-    if db_file.exists():
-        return db_file
+        # Also check for .db files
+        for item in backup_path.rglob("*.db"):
+            if "chatstorage" in str(item).lower() or "whatsapp" in str(item).lower():
+                return item, "filename match (.db)"
 
-    # Also check in subfolders (some backup formats)
-    for subdir in ["7c", "7c/7f"]:
-        db_file = backup_path / subdir / db_hash
-        if db_file.exists():
-            return db_file
+        # Last resort: check all files for SQLite magic bytes
+        for item in backup_path.rglob("*"):
+            if item.is_file() and item.stat().st_size > 100:
+                try:
+                    with open(item, 'rb') as f:
+                        header = f.read(16)
+                        if header == b'SQLite format 3\x00':
+                            # This is a SQLite database - might be WhatsApp
+                            potential_dbs.append((item, "SQLite magic bytes"))
+                except (PermissionError, IOError):
+                    continue
 
-    return None
+        # Return the largest potential database
+        if potential_dbs:
+            potential_dbs.sort(key=lambda x: x[0].stat().st_size, reverse=True)
+            if verbose:
+                print(f"   Found {len(potential_dbs)} potential database(s)")
+                for db, reason in potential_dbs[:3]:
+                    size_mb = db.stat().st_size / 1024 / 1024
+                    print(f"     - {db.name} ({size_mb:.1f} MB, {reason})")
+            return potential_dbs[0]
+
+    except (PermissionError, Exception) as e:
+        if verbose:
+            print(f"   ⚠️  Error scanning backup: {e}")
+
+    return None, None
 
 def apple_timestamp_to_datetime(apple_timestamp):
     """Convert Apple Core Data timestamp to datetime"""
@@ -299,14 +517,28 @@ def generate_html_wrapped(stats, output_file):
         f.write(html)
 
 def main():
-    parser = argparse.ArgumentParser(description='WhatsApp Wrapped MVP - Analyze your WhatsApp conversations')
+    parser = argparse.ArgumentParser(
+        description='WhatsApp Wrapped MVP - Analyze your WhatsApp conversations',
+        epilog='Examples:\n'
+               '  python whatsapp_wrapped_mvp.py --list-backups\n'
+               '  python whatsapp_wrapped_mvp.py --year 2025\n'
+               '  python whatsapp_wrapped_mvp.py --db /path/to/ChatStorage.sqlite',
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument('--db', type=str, help='Path to ChatStorage.sqlite file (if already extracted)')
     parser.add_argument('--output', type=str, default='whatsapp_wrapped_stats.json', help='Output JSON file')
     parser.add_argument('--year', type=int, default=2025, help='Year to analyze (default: 2025, use 0 for all years)')
+    parser.add_argument('--list-backups', action='store_true', help='List all discovered iOS backups')
     args = parser.parse_args()
 
-    print("🎉 WhatsApp Wrapped MVP\n")
+    print("🎉 WhatsApp Wrapped MVP")
+    print(f"Platform: {platform.system()} {platform.release()}\n")
     print("=" * 50)
+
+    # Handle --list-backups flag
+    if args.list_backups:
+        list_backups()
+        return
 
     # If user provided database path directly
     if args.db:
@@ -315,36 +547,63 @@ def main():
             print(f"❌ Database file not found: {db_path}")
             return
         print(f"✓ Using provided database: {db_path}")
-        print(f"✓ Size: {db_path.stat().st_size / 1024 / 1024:.1f} MB")
+        try:
+            print(f"✓ Size: {db_path.stat().st_size / 1024 / 1024:.1f} MB")
+        except Exception:
+            pass
     else:
         # Find iOS backups
         print("\n[1/3] Finding iOS backups...")
-        backups = find_ios_backups()
+        backups = find_ios_backups(verbose=False)
 
         if not backups:
             print("\n❌ No iOS backups found.")
+            system = platform.system().lower()
+            print(f"\nExpected location on {system.title()}:")
+            for loc in get_backup_locations():
+                print(f"  {loc.expanduser()}")
+            print(get_platform_fix_instructions())
             print("\n💡 You can also manually provide the database:")
             print(f"   python {sys.argv[0]} --db /path/to/ChatStorage.sqlite")
+            print(f"\n💡 Or use --list-backups to see all available backups:")
+            print(f"   python {sys.argv[0]} --list-backups")
             return
 
         print(f"✓ Found {len(backups)} backup(s)")
 
         # Use the most recent backup
-        backup_path = backups[0]
-        print(f"✓ Using backup: {backup_path.name}")
+        backup = backups[0]
+        backup_path = backup['path']
+        print(f"✓ Using backup: {backup['device_name']} ({backup['id'][:8]}...)")
+        if backup['backup_date']:
+            date_str = backup['backup_date'].strftime('%Y-%m-%d %H:%M')
+            print(f"  Date: {date_str}")
 
         # Find WhatsApp database
         print("\n[2/3] Looking for WhatsApp database...")
-        db_path = find_whatsapp_db(backup_path)
+        db_path, description = find_whatsapp_db(backup_path)
 
         if not db_path:
-            print("❌ WhatsApp database not found in backup.")
-            print("💡 Make sure you have WhatsApp installed and have created messages.")
+            print("\n❌ WhatsApp database not found in backup.")
+            print("💡 Possible reasons:")
+            print("   - WhatsApp is not installed on the device")
+            print("   - No messages have been sent/received yet")
+            print("   - This is an incomplete backup")
             print(f"\n💡 Or provide the database manually:")
             print(f"   python {sys.argv[0]} --db /path/to/ChatStorage.sqlite")
+            print(f"\n💡 To extract manually, use tools like:")
+            print("   - iMazing (cross-platform)")
+            print("   - 3uTools (Windows)")
+            print("   - iPhone Backup Extractor")
             return
 
-        print(f"✓ Found ChatStorage.sqlite ({db_path.stat().st_size / 1024 / 1024:.1f} MB)")
+        try:
+            size_mb = db_path.stat().st_size / 1024 / 1024
+            print(f"✓ Found ChatStorage.sqlite ({size_mb:.1f} MB)")
+            if description:
+                print(f"  Method: {description}")
+        except Exception as e:
+            print(f"✓ Found ChatStorage.sqlite (error reading size: {e})")
 
     # Analyze database
     print("\n[3/3] Analyzing your WhatsApp data...")
@@ -352,6 +611,11 @@ def main():
 
     try:
         stats = analyze_whatsapp_db(db_path, year=args.year)
+    except sqlite3.DatabaseError as e:
+        print(f"\n❌ Database error: {e}")
+        print("\n💡 The file may be corrupted or not a valid WhatsApp database.")
+        print("💡 Make sure you're using ChatStorage.sqlite from an iOS backup.")
+        return
     except Exception as e:
         print(f"\n❌ Error analyzing database: {e}")
         print("\n💡 Make sure the file is a valid WhatsApp ChatStorage.sqlite database")
