@@ -439,7 +439,7 @@ def analyze_whatsapp_db(db_path, year=None):
     for i, (name, count) in enumerate(top_groups, 1):
         print(f"  {i}. {name}: {count:,} messages")
 
-    # Messages by hour
+    # Messages by hour (all 24 hours)
     cursor.execute(f"""
         SELECT
             CAST(strftime('%H', datetime(ZMESSAGEDATE + 978307200, 'unixepoch')) AS INTEGER) as hour,
@@ -447,10 +447,12 @@ def analyze_whatsapp_db(db_path, year=None):
         FROM ZWAMESSAGE
         WHERE ZMESSAGEDATE IS NOT NULL {date_filter}
         GROUP BY hour
-        ORDER BY count DESC
-        LIMIT 5
+        ORDER BY hour ASC
     """)
-    top_hours = cursor.fetchall()
+    all_hours = cursor.fetchall()
+
+    # Also keep top 5 for backward compat
+    top_hours = sorted(all_hours, key=lambda x: x[1], reverse=True)[:5]
 
     print("\n⏰ Top 5 Messaging Hours:")
     for hour, count in top_hours:
@@ -565,6 +567,28 @@ def analyze_whatsapp_db(db_path, year=None):
     else:
         print("  No emojis found")
 
+    # Most frequently sent message
+    cursor.execute(f"""
+        SELECT ZTEXT, COUNT(*) as cnt
+        FROM ZWAMESSAGE
+        WHERE ZTEXT IS NOT NULL
+          AND ZISFROMME = 1
+          AND ZMESSAGEDATE IS NOT NULL
+          AND length(ZTEXT) >= 2
+          {date_filter}
+        GROUP BY ZTEXT
+        ORDER BY cnt DESC
+        LIMIT 5
+    """)
+    top_messages = cursor.fetchall()
+    if top_messages:
+        print("\n💬 Most sent messages:")
+        for i, (text, count) in enumerate(top_messages, 1):
+            display = text[:50] + ('...' if len(text) > 50 else '')
+            print(f"  {i}. \"{display}\" - {count:,} times")
+    else:
+        top_messages = []
+
     # Prepare statistics for JSON output
     stats = {
         "year": year,
@@ -581,9 +605,11 @@ def analyze_whatsapp_db(db_path, year=None):
         "top_individual_chats": [{"name": name, "count": count} for name, count in top_individual_chats],
         "top_groups": [{"name": name, "count": count} for name, count in top_groups],
         "top_hours": [{"hour": hour, "count": count} for hour, count in top_hours],
+        "all_hours": [{"hour": hour, "count": count} for hour, count in all_hours],
         "days_of_week": [{"day": day, "count": count} for day, count in days],
         "busiest_day": {"date": busiest_day_date, "count": busiest_day_count},
-        "top_emojis": [{"emoji": emoji, "count": count} for emoji, count in top_emojis]
+        "top_emojis": [{"emoji": emoji, "count": count} for emoji, count in top_emojis],
+        "top_messages": [{"text": text, "count": count} for text, count in top_messages]
     }
 
     conn.close()
@@ -652,6 +678,7 @@ def generate_html_wrapped(stats, output_file):
         personality_description=stats.get('description', ''),
         busiest_day=stats.get('busiest_day', {}),
         top_emojis=stats.get('top_emojis', []),
+        top_messages=stats.get('top_messages', []),
         data_json=json.dumps(stats)
     )
 

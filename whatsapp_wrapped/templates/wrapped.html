@@ -569,6 +569,54 @@
       </section>
       {% endif %}
 
+      <!-- Slide: Most Sent Message -->
+      {% if top_messages and top_messages|length > 0 %}
+      <section class="slide">
+        <p style="color: var(--secondary-color); font-size: 1.5rem">
+          Your most sent message
+        </p>
+        <h1
+          style="
+            font-size: clamp(2rem, 6vw, 4rem);
+            margin-top: 1rem;
+            word-break: break-word;
+            max-width: 80%;
+          "
+        >
+          "{{ top_messages[0].text }}"
+        </h1>
+        <p style="font-size: 2rem; margin-top: 1.5rem">
+          <span style="color: var(--accent-color); font-weight: 700">
+            {{ '{:,}'.format(top_messages[0].count) }}
+          </span>
+          times
+        </p>
+        {% if top_messages|length > 1 %}
+        <div
+          style="
+            margin-top: 2rem;
+            color: var(--secondary-color);
+            font-size: 1rem;
+          "
+        >
+          {% for msg in top_messages[1:3] %}
+          <p style="margin-top: 0.4rem">
+            #{{ loop.index + 1 }} "{{ msg.text[:40] }}{% if msg.text|length > 40 %}...{% endif %}" — {{ '{:,}'.format(msg.count) }}x
+          </p>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </section>
+      {% endif %}
+
+      <!-- Slide: 24h Activity -->
+      <section class="slide">
+        <h2 style="margin-bottom: 2rem">Your 24-hour activity</h2>
+        <div class="chart-container">
+          <canvas data-chart="allHours"></canvas>
+        </div>
+      </section>
+
       <!-- Slide 9: Peak Hours -->
       <section class="slide" data-slide="8">
         <h2 style="margin-bottom: 2rem">Your peak hours</h2>
@@ -722,6 +770,9 @@
           case "sentReceived":
             createSentReceivedChart(canvas);
             break;
+          case "allHours":
+            createAllHoursChart(canvas);
+            break;
           case "hours":
             createHourlyChart(canvas);
             break;
@@ -793,7 +844,76 @@
         });
       }
 
-      // Create hourly chart
+      // Create full 24-hour activity chart
+      function createAllHoursChart(canvas) {
+        const hourData = wrappedData.all_hours || wrappedData.top_hours || [];
+        if (hourData.length === 0) {
+          canvas.parentElement.innerHTML =
+            '<p style="color: var(--secondary-color);">No data available</p>';
+          return;
+        }
+
+        // Build a map and fill all 24 hours
+        const hourMap = {};
+        hourData.forEach((h) => (hourMap[h.hour] = h.count));
+        const labels = [];
+        const counts = [];
+        const colors = [];
+        let maxCount = 0;
+        for (let i = 0; i < 24; i++) {
+          labels.push(`${String(i).padStart(2, "0")}:00`);
+          const c = hourMap[i] || 0;
+          counts.push(c);
+          if (c > maxCount) maxCount = c;
+        }
+        // Gradient: highlight peak hours
+        for (let i = 0; i < 24; i++) {
+          const intensity = maxCount > 0 ? counts[i] / maxCount : 0;
+          const alpha = 0.2 + intensity * 0.7;
+          colors.push(`rgba(37, 211, 102, ${alpha})`);
+        }
+
+        new Chart(canvas, {
+          type: "bar",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: "Messages",
+                data: counts,
+                backgroundColor: colors,
+                borderColor: "rgba(37, 211, 102, 1)",
+                borderWidth: 1,
+                borderRadius: 4,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: { color: "#b3b3b3" },
+                grid: { color: "rgba(255, 255, 255, 0.1)" },
+              },
+              x: {
+                ticks: {
+                  color: "#b3b3b3",
+                  maxRotation: 45,
+                  font: { size: 10 },
+                },
+                grid: { display: false },
+              },
+            },
+          },
+        });
+      }
+
+      // Create hourly chart (top 5)
       function createHourlyChart(canvas) {
         if (!wrappedData.top_hours || wrappedData.top_hours.length === 0) {
           canvas.parentElement.innerHTML =
