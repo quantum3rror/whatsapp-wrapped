@@ -28,8 +28,42 @@ from collections import defaultdict, Counter
 import json
 import argparse
 import platform
+import re
 from jinja2 import Template
 import plistlib
+
+# Regex for matching emoji characters (covers most common emoji Unicode ranges)
+EMOJI_PATTERN = re.compile(
+    "["
+    "\U0001F600-\U0001F64F"  # Emoticons
+    "\U0001F300-\U0001F5FF"  # Misc symbols & pictographs
+    "\U0001F680-\U0001F6FF"  # Transport & map
+    "\U0001F1E0-\U0001F1FF"  # Flags
+    "\U0001F900-\U0001F9FF"  # Supplemental symbols
+    "\U0001FA00-\U0001FA6F"  # Chess symbols
+    "\U0001FA70-\U0001FAFF"  # Symbols extended-A
+    "\U00002702-\U000027B0"  # Dingbats
+    "\U0000FE00-\U0000FE0F"  # Variation selectors
+    "\U0000200D"             # Zero width joiner
+    "\U000023E9-\U000023F3"  # Misc technical
+    "\U000023F8-\U000023FA"
+    "\U00002600-\U000026FF"  # Misc symbols
+    "\U00002700-\U000027BF"  # Dingbats
+    "\U00002934-\U00002935"
+    "\U000025AA-\U000025FE"
+    "\U00002B05-\U00002B07"
+    "\U00002B1B-\U00002B1C"
+    "\U00002B50"
+    "\U00002B55"
+    "\U00003030"
+    "\U0000303D"
+    "\U00003297"
+    "\U00003299"
+    "\U0000200D"             # ZWJ
+    "\U0000FE0F"             # Variation selector
+    "]+",
+    flags=re.UNICODE
+)
 
 # Apple Core Data timestamp starts from 2001-01-01 instead of Unix epoch (1970-01-01)
 APPLE_TIMESTAMP_OFFSET = 978307200
@@ -459,6 +493,78 @@ def analyze_whatsapp_db(db_path, year=None):
     messages_per_day = round(total_messages / days_in_period, 1)
     print(f"✓ Messages per day: {messages_per_day}")
 
+    # Busiest single day
+    cursor.execute(f"""
+        SELECT
+            date(ZMESSAGEDATE + 978307200, 'unixepoch') as msg_date,
+            COUNT(*) as count
+        FROM ZWAMESSAGE
+        WHERE ZMESSAGEDATE IS NOT NULL {date_filter}
+        GROUP BY msg_date
+        ORDER BY count DESC
+        LIMIT 1
+    """)
+    busiest_day_row = cursor.fetchone()
+    if busiest_day_row:
+        busiest_day_date, busiest_day_count = busiest_day_row
+        print(f"\n🔥 Busiest day: {busiest_day_date} with {busiest_day_count:,} messages")
+    else:
+        busiest_day_date, busiest_day_count = None, 0
+
+    # Top emojis from sent messages
+    print("\n😂 Analyzing emojis...")
+    cursor.execute(f"""
+        SELECT ZTEXT
+        FROM ZWAMESSAGE
+        WHERE ZTEXT IS NOT NULL
+          AND ZMESSAGEDATE IS NOT NULL
+          AND ZISFROMME = 1
+          {date_filter}
+    """)
+    emoji_counter = Counter()
+    for (text,) in cursor:
+        if text:
+            # Find all emoji sequences, then split into individual emojis
+            emojis = EMOJI_PATTERN.findall(text)
+            for emoji_seq in emojis:
+                # Split the sequence into individual grapheme clusters
+                # Each emoji is typically 1-2 codepoints (+ optional variation selector)
+                i = 0
+                while i < len(emoji_seq):
+                    cp = ord(emoji_seq[i])
+                    # Check if this is a surrogate pair / multi-codepoint emoji
+                    emoji_char = emoji_seq[i]
+                    i += 1
+                    # Consume variation selectors (U+FE0F) and ZWJ sequences
+                    while i < len(emoji_seq):
+                        next_cp = ord(emoji_seq[i])
+                        if next_cp == 0xFE0F:  # Variation selector
+                            emoji_char += emoji_seq[i]
+                            i += 1
+                        elif next_cp == 0x200D:  # ZWJ - keep connected
+                            emoji_char += emoji_seq[i]
+                            i += 1
+                            if i < len(emoji_seq):
+                                emoji_char += emoji_seq[i]
+                                i += 1
+                        elif 0x1F3FB <= next_cp <= 0x1F3FF:  # Skin tone modifier
+                            emoji_char += emoji_seq[i]
+                            i += 1
+                        else:
+                            break
+                    # Only count actual emojis, not standalone modifiers
+                    stripped = emoji_char.strip('\ufe0f\u200d')
+                    if stripped and len(stripped) >= 1:
+                        emoji_counter[emoji_char] += 1
+
+    top_emojis = emoji_counter.most_common(10)
+    if top_emojis:
+        print("🏆 Top 10 Emojis (sent by you):")
+        for i, (emoji, count) in enumerate(top_emojis, 1):
+            print(f"  {i}. {emoji} - {count:,} times")
+    else:
+        print("  No emojis found")
+
     # Prepare statistics for JSON output
     stats = {
         "year": year,
@@ -475,7 +581,9 @@ def analyze_whatsapp_db(db_path, year=None):
         "top_individual_chats": [{"name": name, "count": count} for name, count in top_individual_chats],
         "top_groups": [{"name": name, "count": count} for name, count in top_groups],
         "top_hours": [{"hour": hour, "count": count} for hour, count in top_hours],
-        "days_of_week": [{"day": day, "count": count} for day, count in days]
+        "days_of_week": [{"day": day, "count": count} for day, count in days],
+        "busiest_day": {"date": busiest_day_date, "count": busiest_day_count},
+        "top_emojis": [{"emoji": emoji, "count": count} for emoji, count in top_emojis]
     }
 
     conn.close()
@@ -542,6 +650,8 @@ def generate_html_wrapped(stats, output_file):
         date_range=stats.get('date_range', {}),
         personality=stats.get('personality', 'Chatter'),
         personality_description=stats.get('description', ''),
+        busiest_day=stats.get('busiest_day', {}),
+        top_emojis=stats.get('top_emojis', []),
         data_json=json.dumps(stats)
     )
 

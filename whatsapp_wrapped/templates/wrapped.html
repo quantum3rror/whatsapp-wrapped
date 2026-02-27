@@ -525,6 +525,50 @@
       </section>
       {% endif %}
 
+      <!-- Slide: Busiest Day -->
+      {% if busiest_day and busiest_day.date %}
+      <section class="slide">
+        <p style="color: var(--secondary-color); font-size: 1.5rem">
+          Your busiest day was
+        </p>
+        <h1 style="font-size: clamp(2rem, 8vw, 5rem)">
+          {{ busiest_day.date }}
+        </h1>
+        <div
+          class="stat-big"
+          style="font-size: clamp(3rem, 10vw, 8rem); margin-top: 1rem"
+        >
+          {{ '{:,}'.format(busiest_day.count) }}
+        </div>
+        <h2 style="font-size: clamp(1.5rem, 4vw, 3rem)">messages</h2>
+      </section>
+      {% endif %}
+
+      <!-- Slide: Top Emojis -->
+      {% if top_emojis and top_emojis|length > 0 %}
+      <section class="slide">
+        <h2 style="margin-bottom: 0.5rem">Your Top Emojis</h2>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1rem;
+            margin-bottom: 1rem;
+          "
+        >
+          Most used by you
+        </p>
+        <table class="top10-table">
+          {% for item in top_emojis[:10] %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td style="font-size: 1.6rem">{{ item.emoji }}</td>
+            <td>{{ '{:,}'.format(item.count) }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+      </section>
+      {% endif %}
+
       <!-- Slide 9: Peak Hours -->
       <section class="slide" data-slide="8">
         <h2 style="margin-bottom: 2rem">Your peak hours</h2>
