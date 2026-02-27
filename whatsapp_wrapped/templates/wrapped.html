@@ -507,17 +507,39 @@
       }
 
       /* First/Last message styles */
+      .chat-thread {
+        display: flex;
+        flex-direction: column;
+        width: 90%;
+        max-width: 400px;
+        gap: 0.3rem;
+        margin-top: 1rem;
+        overflow-y: auto;
+        max-height: 55vh;
+      }
+
       .message-bubble {
         background: var(--card-bg);
         border-radius: 16px;
-        padding: 1.2rem 1.5rem;
-        max-width: 80%;
-        margin-top: 1rem;
+        padding: 0.7rem 1rem;
+        max-width: 85%;
         text-align: left;
         position: relative;
-        font-size: 1.2rem;
-        line-height: 1.5;
+        font-size: 1rem;
+        line-height: 1.4;
         word-break: break-word;
+      }
+
+      .message-bubble.highlight {
+        padding: 1rem 1.2rem;
+        font-size: 1.15rem;
+        box-shadow: 0 0 12px rgba(37, 211, 102, 0.3);
+        border: 1px solid var(--accent-color);
+      }
+
+      .message-bubble.context {
+        opacity: 0.55;
+        font-size: 0.9rem;
       }
 
       .message-bubble.sent {
@@ -532,10 +554,10 @@
       }
 
       .message-meta {
-        font-size: 0.75rem;
+        font-size: 0.65rem;
         color: var(--secondary-color);
         text-align: right;
-        margin-top: 0.3rem;
+        margin-top: 0.2rem;
       }
     </style>
   </head>
@@ -746,7 +768,8 @@
             margin-bottom: 1.5rem;
           "
         >
-          Your year together
+          {% if chat_timelines.top_chat.is_lifetime %}Your history together{%
+          else %}Your year together{% endif %}
         </p>
         <div class="chart-container">
           <canvas data-chart="chatTimeline"></canvas>
@@ -913,7 +936,8 @@
             margin-bottom: 1.5rem;
           "
         >
-          Your year together
+          {% if chat_timelines.top_group.is_lifetime %}Your history together{%
+          else %}Your year together{% endif %}
         </p>
         <div class="chart-container">
           <canvas data-chart="groupTimeline"></canvas>
@@ -973,64 +997,76 @@
       <!-- Slide: First Message of the Year -->
       {% if first_message %}
       <section class="slide" data-section="Content">
-        <p style="color: var(--secondary-color); font-size: 1.5rem">
-          Your first message of {{ year }}
+        <p style="color: var(--secondary-color); font-size: 1.3rem">
+          Your first message {% if year %}of {{ year }}{% endif %}
         </p>
-        <div
-          class="message-bubble {{ 'sent' if first_message.from_me else 'received' }}"
-        >
-          {{ first_message.text }}
-          <div class="message-meta">{{ first_message.time }}</div>
-        </div>
         <p
           style="
             color: var(--secondary-color);
-            font-size: 1rem;
-            margin-top: 1rem;
+            font-size: 0.85rem;
+            margin-top: 0.3rem;
           "
         >
-          {% if first_message.from_me %} To
+          {% if first_message.from_me %}To{% else %}From{% endif %}
           <span style="color: var(--text-color); font-weight: 600"
             >{{ first_message.chat }}</span
           >
-          {% else %} From
-          <span style="color: var(--text-color); font-weight: 600"
-            >{{ first_message.chat }}</span
-          >
-          {% endif %} · {{ first_message.date }}
+          · {{ first_message.date }}
         </p>
+        <div class="chat-thread">
+          <div
+            class="message-bubble highlight {{ 'sent' if first_message.from_me else 'received' }}"
+          >
+            {{ first_message.text }}
+            <div class="message-meta">{{ first_message.time }}</div>
+          </div>
+          {% if first_message.context %} {% for ctx in first_message.context %}
+          <div
+            class="message-bubble context {{ 'sent' if ctx.from_me else 'received' }}"
+          >
+            {{ ctx.text }}
+            <div class="message-meta">{{ ctx.time }}</div>
+          </div>
+          {% endfor %} {% endif %}
+        </div>
       </section>
       {% endif %}
 
       <!-- Slide: Last Message of the Year -->
       {% if last_message %}
       <section class="slide" data-section="Content">
-        <p style="color: var(--secondary-color); font-size: 1.5rem">
-          Your last message of {{ year }}
+        <p style="color: var(--secondary-color); font-size: 1.3rem">
+          Your last message {% if year %}of {{ year }}{% endif %}
         </p>
-        <div
-          class="message-bubble {{ 'sent' if last_message.from_me else 'received' }}"
-        >
-          {{ last_message.text }}
-          <div class="message-meta">{{ last_message.time }}</div>
-        </div>
         <p
           style="
             color: var(--secondary-color);
-            font-size: 1rem;
-            margin-top: 1rem;
+            font-size: 0.85rem;
+            margin-top: 0.3rem;
           "
         >
-          {% if last_message.from_me %} To
+          {% if last_message.from_me %}To{% else %}From{% endif %}
           <span style="color: var(--text-color); font-weight: 600"
             >{{ last_message.chat }}</span
           >
-          {% else %} From
-          <span style="color: var(--text-color); font-weight: 600"
-            >{{ last_message.chat }}</span
-          >
-          {% endif %} · {{ last_message.date }}
+          · {{ last_message.date }}
         </p>
+        <div class="chat-thread">
+          {% if last_message.context %} {% for ctx in last_message.context %}
+          <div
+            class="message-bubble context {{ 'sent' if ctx.from_me else 'received' }}"
+          >
+            {{ ctx.text }}
+            <div class="message-meta">{{ ctx.time }}</div>
+          </div>
+          {% endfor %} {% endif %}
+          <div
+            class="message-bubble highlight {{ 'sent' if last_message.from_me else 'received' }}"
+          >
+            {{ last_message.text }}
+            <div class="message-meta">{{ last_message.time }}</div>
+          </div>
+        </div>
       </section>
       {% endif %}
 
@@ -1535,22 +1571,12 @@
         const data = timelines[key].months;
         if (!data || data.length === 0) return;
 
-        const monthNames = [
-          "Jan",
-          "Feb",
-          "Mar",
-          "Apr",
-          "May",
-          "Jun",
-          "Jul",
-          "Aug",
-          "Sep",
-          "Oct",
-          "Nov",
-          "Dec",
-        ];
-        const labels = data.map((d) => monthNames[d.month - 1] || d.month);
+        const labels = data.map((d) => d.label || d.name || d.month);
         const counts = data.map((d) => d.count);
+
+        // For lifetime mode with many months, reduce label density
+        const isLifetime = timelines[key].is_lifetime || false;
+        const maxLabels = isLifetime ? 12 : 12;
 
         new Chart(canvas, {
           type: "line",
@@ -1563,10 +1589,10 @@
                 backgroundColor: "rgba(37, 211, 102, 0.1)",
                 fill: true,
                 tension: 0.4,
-                pointRadius: 4,
+                pointRadius: isLifetime ? 1.5 : 4,
                 pointBackgroundColor: "#25D366",
                 pointBorderColor: "#25D366",
-                borderWidth: 2.5,
+                borderWidth: isLifetime ? 1.8 : 2.5,
               },
             ],
           },
@@ -1586,7 +1612,12 @@
             },
             scales: {
               x: {
-                ticks: { color: "rgba(255,255,255,0.6)", font: { size: 11 } },
+                ticks: {
+                  color: "rgba(255,255,255,0.6)",
+                  font: { size: isLifetime ? 9 : 11 },
+                  maxRotation: isLifetime ? 45 : 0,
+                  maxTicksLimit: maxLabels,
+                },
                 grid: { display: false },
               },
               y: {

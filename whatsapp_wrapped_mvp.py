@@ -704,39 +704,65 @@ def analyze_whatsapp_db(db_path, year=None):
     # Chat timeline for top 1 person and top 1 group (messages per month)
     print("\n📈 Chat timelines...")
     chat_timelines = {}
+    is_lifetime = not (year and year > 0)
+
+    if is_lifetime:
+        # Lifetime mode: group by year+month for full history
+        timeline_select = """CAST(strftime('%Y', datetime(m.ZMESSAGEDATE + 978307200, 'unixepoch')) AS INTEGER) as yr,
+                CAST(strftime('%m', datetime(m.ZMESSAGEDATE + 978307200, 'unixepoch')) AS INTEGER) as month"""
+        timeline_group = "GROUP BY yr, month ORDER BY yr, month"
+    else:
+        # Single year: group by month only
+        timeline_select = """NULL as yr,
+                CAST(strftime('%m', datetime(m.ZMESSAGEDATE + 978307200, 'unixepoch')) AS INTEGER) as month"""
+        timeline_group = "GROUP BY month ORDER BY month"
+
+    def build_timeline_months(rows, is_lifetime_mode):
+        result = []
+        for yr, m, c in rows:
+            entry = {"month": m, "count": c}
+            if is_lifetime_mode:
+                entry["year"] = yr
+                entry["label"] = f"{month_names[m-1]} {yr}"
+            else:
+                entry["name"] = month_names[m-1]
+                entry["label"] = month_names[m-1]
+            result.append(entry)
+        return result
+
     if top_individual_chats:
         top1_name = top_individual_chats[0][0]
         cursor.execute(f"""
-            SELECT
-                CAST(strftime('%m', datetime(m.ZMESSAGEDATE + 978307200, 'unixepoch')) AS INTEGER) as month,
-                COUNT(*) as cnt
+            SELECT {timeline_select}, COUNT(*) as cnt
             FROM ZWAMESSAGE m
             JOIN ZWACHATSESSION cs ON m.ZCHATSESSION = cs.Z_PK
             WHERE cs.ZPARTNERNAME = ? AND m.ZMESSAGEDATE IS NOT NULL {date_filter}
-            GROUP BY month ORDER BY month
+            {timeline_group}
         """, (top1_name,))
+        months_data = build_timeline_months(cursor.fetchall(), is_lifetime)
         chat_timelines['top_chat'] = {
             'name': top1_name,
-            'months': [{"month": m, "name": month_names[m-1], "count": c} for m, c in cursor.fetchall()]
+            'months': months_data,
+            'is_lifetime': is_lifetime
         }
-        print(f"  {top1_name}: {sum(x['count'] for x in chat_timelines['top_chat']['months']):,} msgs over {len(chat_timelines['top_chat']['months'])} months")
+        print(f"  {top1_name}: {sum(x['count'] for x in months_data):,} msgs over {len(months_data)} months")
 
     if top_groups:
         top1_group = top_groups[0][0]
         cursor.execute(f"""
-            SELECT
-                CAST(strftime('%m', datetime(m.ZMESSAGEDATE + 978307200, 'unixepoch')) AS INTEGER) as month,
-                COUNT(*) as cnt
+            SELECT {timeline_select}, COUNT(*) as cnt
             FROM ZWAMESSAGE m
             JOIN ZWACHATSESSION cs ON m.ZCHATSESSION = cs.Z_PK
             WHERE cs.ZPARTNERNAME = ? AND m.ZMESSAGEDATE IS NOT NULL {date_filter}
-            GROUP BY month ORDER BY month
+            {timeline_group}
         """, (top1_group,))
+        months_data = build_timeline_months(cursor.fetchall(), is_lifetime)
         chat_timelines['top_group'] = {
             'name': top1_group,
-            'months': [{"month": m, "name": month_names[m-1], "count": c} for m, c in cursor.fetchall()]
+            'months': months_data,
+            'is_lifetime': is_lifetime
         }
-        print(f"  {top1_group}: {sum(x['count'] for x in chat_timelines['top_group']['months']):,} msgs over {len(chat_timelines['top_group']['months'])} months")
+        print(f"  {top1_group}: {sum(x['count'] for x in months_data):,} msgs over {len(months_data)} months")
 
     # Response time comparison for top 3 individual chats
     print("\n⚡ Response time comparison...")
@@ -781,53 +807,81 @@ def analyze_whatsapp_db(db_path, year=None):
             else:
                 print(f"  {chat_name}: Skipped (you_replies={len(you_times)}, them_replies={len(them_times)})")
 
-    # First and last message of the year
+    # First and last message of the year (with context messages)
     print("\n✉️  First & last message...")
-    cursor.execute(f"""
-        SELECT m.ZTEXT, cs.ZPARTNERNAME, m.ZISFROMME,
-               m.ZMESSAGEDATE
-        FROM ZWAMESSAGE m
-        JOIN ZWACHATSESSION cs ON m.ZCHATSESSION = cs.Z_PK
-        WHERE m.ZTEXT IS NOT NULL AND m.ZMESSAGEDATE IS NOT NULL
-          AND cs.ZPARTNERNAME IS NOT NULL {date_filter}
-        ORDER BY m.ZMESSAGEDATE ASC LIMIT 1
-    """)
-    first_msg_row = cursor.fetchone()
-    first_message = None
-    if first_msg_row:
-        dt_obj = apple_timestamp_to_datetime(first_msg_row[3])
-        first_message = {
-            'text': first_msg_row[0][:100],
-            'chat': first_msg_row[1],
-            'from_me': first_msg_row[2] == 1,
+
+    def fetch_message_with_context(cursor, date_filter, order, context_count=3):
+        """Fetch the first/last message and surrounding context from the same chat"""
+        cursor.execute(f"""
+            SELECT m.ZTEXT, cs.ZPARTNERNAME, m.ZISFROMME,
+                   m.ZMESSAGEDATE, m.ZCHATSESSION
+            FROM ZWAMESSAGE m
+            JOIN ZWACHATSESSION cs ON m.ZCHATSESSION = cs.Z_PK
+            WHERE m.ZTEXT IS NOT NULL AND m.ZMESSAGEDATE IS NOT NULL
+              AND cs.ZPARTNERNAME IS NOT NULL {date_filter}
+            ORDER BY m.ZMESSAGEDATE {order} LIMIT 1
+        """)
+        row = cursor.fetchone()
+        if not row:
+            return None
+        dt_obj = apple_timestamp_to_datetime(row[3])
+        main_msg = {
+            'text': row[0][:100],
+            'chat': row[1],
+            'from_me': row[2] == 1,
             'date': dt_obj.strftime('%Y-%m-%d'),
             'time': dt_obj.strftime('%H:%M'),
         }
+        chat_session = row[4]
+        msg_date = row[3]
+
+        # Fetch context: messages just before (for first) or just after (for last)
+        if order == 'ASC':
+            # First message: get a few messages AFTER it in the same chat for context thread
+            cursor.execute(f"""
+                SELECT m.ZTEXT, m.ZISFROMME, m.ZMESSAGEDATE
+                FROM ZWAMESSAGE m
+                WHERE m.ZCHATSESSION = ? AND m.ZMESSAGEDATE > ?
+                  AND m.ZTEXT IS NOT NULL AND m.ZMESSAGEDATE IS NOT NULL
+                ORDER BY m.ZMESSAGEDATE ASC LIMIT ?
+            """, (chat_session, msg_date, context_count))
+        else:
+            # Last message: get a few messages BEFORE it in the same chat
+            cursor.execute(f"""
+                SELECT m.ZTEXT, m.ZISFROMME, m.ZMESSAGEDATE
+                FROM ZWAMESSAGE m
+                WHERE m.ZCHATSESSION = ? AND m.ZMESSAGEDATE < ?
+                  AND m.ZTEXT IS NOT NULL AND m.ZMESSAGEDATE IS NOT NULL
+                ORDER BY m.ZMESSAGEDATE DESC LIMIT ?
+            """, (chat_session, msg_date, context_count))
+
+        context_rows = cursor.fetchall()
+        context_msgs = []
+        for cr in context_rows:
+            ctx_dt = apple_timestamp_to_datetime(cr[2])
+            context_msgs.append({
+                'text': cr[0][:100],
+                'from_me': cr[1] == 1,
+                'time': ctx_dt.strftime('%H:%M'),
+            })
+
+        if order == 'DESC':
+            context_msgs.reverse()  # chronological order
+
+        main_msg['context'] = context_msgs
+        return main_msg
+
+    first_message = fetch_message_with_context(cursor, date_filter, 'ASC')
+    if first_message:
         who = "You" if first_message['from_me'] else first_message['chat']
         print(f"  First: \"{first_message['text'][:50]}\" - {who} - {first_message['date']} {first_message['time']}")
+        print(f"    + {len(first_message['context'])} context messages after")
 
-    cursor.execute(f"""
-        SELECT m.ZTEXT, cs.ZPARTNERNAME, m.ZISFROMME,
-               m.ZMESSAGEDATE
-        FROM ZWAMESSAGE m
-        JOIN ZWACHATSESSION cs ON m.ZCHATSESSION = cs.Z_PK
-        WHERE m.ZTEXT IS NOT NULL AND m.ZMESSAGEDATE IS NOT NULL
-          AND cs.ZPARTNERNAME IS NOT NULL {date_filter}
-        ORDER BY m.ZMESSAGEDATE DESC LIMIT 1
-    """)
-    last_msg_row = cursor.fetchone()
-    last_message = None
-    if last_msg_row:
-        dt_obj = apple_timestamp_to_datetime(last_msg_row[3])
-        last_message = {
-            'text': last_msg_row[0][:100],
-            'chat': last_msg_row[1],
-            'from_me': last_msg_row[2] == 1,
-            'date': dt_obj.strftime('%Y-%m-%d'),
-            'time': dt_obj.strftime('%H:%M'),
-        }
+    last_message = fetch_message_with_context(cursor, date_filter, 'DESC')
+    if last_message:
         who = "You" if last_message['from_me'] else last_message['chat']
         print(f"  Last: \"{last_message['text'][:50]}\" - {who} - {last_message['date']} {last_message['time']}")
+        print(f"    + {len(last_message['context'])} context messages before")
 
     # Longest gap in a chat
     print("\n🕳️  Longest gap...")
