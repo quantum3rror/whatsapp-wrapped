@@ -446,6 +446,19 @@ def analyze_whatsapp_db(db_path, year=None):
     for day, count in days:
         print(f"  {day}: {count:,} messages")
 
+    # Calculate days in analysis period
+    if year and year > 0:
+        period_start = datetime(year, 1, 1)
+        period_end = min(datetime(year, 12, 31), datetime.now())
+        days_in_period = max((period_end - period_start).days, 1)
+    elif min_dt and max_dt:
+        days_in_period = max((max_dt - min_dt).days, 1)
+    else:
+        days_in_period = 365
+
+    messages_per_day = round(total_messages / days_in_period, 1)
+    print(f"✓ Messages per day: {messages_per_day}")
+
     # Prepare statistics for JSON output
     stats = {
         "year": year,
@@ -453,6 +466,8 @@ def analyze_whatsapp_db(db_path, year=None):
         "sent": sent,
         "received": received,
         "total_conversations": total_chats,
+        "days_in_period": days_in_period,
+        "messages_per_day": messages_per_day,
         "date_range": {
             "start": str(min_dt.date()) if min_dt else None,
             "end": str(max_dt.date()) if max_dt else None
@@ -517,6 +532,8 @@ def generate_html_wrapped(stats, output_file):
         total_messages=f"{stats['total_messages']:,}",
         sent=f"{stats['sent']:,}",
         received=f"{stats['received']:,}",
+        messages_per_day=stats.get('messages_per_day', 0),
+        days_in_period=stats.get('days_in_period', 365),
         top_individual_chats=top_individual_chats[:3],  # Top 3 for hero slides
         top_individual_chats_full=stats.get('top_individual_chats', []),  # Full top 10 for table
         top_groups=top_groups[:3],  # Top 3 for hero slides

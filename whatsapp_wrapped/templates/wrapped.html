@@ -299,6 +299,10 @@
             <p>Received</p>
             <p>{{ received }}</p>
           </div>
+          <div class="stat-item">
+            <p>Per Day</p>
+            <p>{{ messages_per_day }}</p>
+          </div>
         </div>
       </section>
 
@@ -323,6 +327,16 @@
           </span>
           messages
         </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+          "
+        >
+          ≈ {{ (top_individual_chats[0].count / days_in_period)|round(1) }} per
+          day
+        </p>
       </section>
       {% endif %}
 
@@ -338,6 +352,16 @@
             {{ '{:,}'.format(top_individual_chats[1].count) }}
           </span>
           messages
+        </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+          "
+        >
+          ≈ {{ (top_individual_chats[1].count / days_in_period)|round(1) }} per
+          day
         </p>
       </section>
       {% endif %}
@@ -355,6 +379,16 @@
           </span>
           messages
         </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+          "
+        >
+          ≈ {{ (top_individual_chats[2].count / days_in_period)|round(1) }} per
+          day
+        </p>
       </section>
       {% endif %}
 
@@ -368,7 +402,18 @@
           <tr>
             <td>{{ loop.index }}</td>
             <td>{{ chat.name }}</td>
-            <td>{{ '{:,}'.format(chat.count) }}</td>
+            <td>
+              {{ '{:,}'.format(chat.count) }}
+              <span
+                style="
+                  color: var(--secondary-color);
+                  font-size: 0.75em;
+                  font-weight: 400;
+                "
+              >
+                (≈{{ (chat.count / days_in_period)|round(1) }}/d)
+              </span>
+            </td>
           </tr>
           {% endfor %}
         </table>
@@ -389,6 +434,15 @@
           </span>
           messages
         </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+          "
+        >
+          ≈ {{ (top_groups[0].count / days_in_period)|round(1) }} per day
+        </p>
       </section>
       {% endif %}
 
@@ -405,6 +459,15 @@
             {{ '{:,}'.format(top_groups[1].count) }}
           </span>
           messages
+        </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+          "
+        >
+          ≈ {{ (top_groups[1].count / days_in_period)|round(1) }} per day
         </p>
       </section>
       {% endif %}
@@ -423,6 +486,15 @@
           </span>
           messages
         </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+          "
+        >
+          ≈ {{ (top_groups[2].count / days_in_period)|round(1) }} per day
+        </p>
       </section>
       {% endif %}
 
@@ -435,7 +507,18 @@
           <tr>
             <td>{{ loop.index }}</td>
             <td>{{ group.name }}</td>
-            <td>{{ '{:,}'.format(group.count) }}</td>
+            <td>
+              {{ '{:,}'.format(group.count) }}
+              <span
+                style="
+                  color: var(--secondary-color);
+                  font-size: 0.75em;
+                  font-weight: 400;
+                "
+              >
+                (≈{{ (group.count / days_in_period)|round(1) }}/d)
+              </span>
+            </td>
           </tr>
           {% endfor %}
         </table>
