@@ -1,0 +1,2541 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WhatsApp Wrapped 2025</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --bg-color: #121212;
+        --text-color: #ffffff;
+        --accent-color: #25d366; /* WhatsApp green */
+        --secondary-color: #b3b3b3;
+        --card-bg: #1e1e1e;
+      }
+
+      body {
+        font-family:
+          "Circular",
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          "Helvetica Neue",
+          sans-serif;
+        background: var(--bg-color);
+        color: var(--text-color);
+        overflow: hidden;
+        height: 100vh;
+        margin: 0;
+      }
+
+      .presentation {
+        width: 100vw;
+        height: 100vh;
+        position: relative;
+      }
+
+      .slide {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 2rem;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        text-align: center;
+      }
+
+      .slide.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      h1 {
+        font-size: clamp(3rem, 10vw, 8rem);
+        font-weight: 900;
+        line-height: 0.9;
+        margin-bottom: 1rem;
+      }
+
+      h2 {
+        font-size: clamp(2rem, 6vw, 5rem);
+        font-weight: 700;
+      }
+
+      .stat-big {
+        font-size: clamp(4rem, 15vw, 12rem);
+        font-weight: 900;
+        color: var(--accent-color);
+        line-height: 1;
+      }
+
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .slide.active h1,
+      .slide.active h2,
+      .slide.active .stat-big {
+        animation: slideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      }
+
+      .controls {
+        position: fixed;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        gap: 1.2rem;
+        z-index: 100;
+      }
+
+      .controls button {
+        background: var(--card-bg);
+        border: none;
+        color: var(--text-color);
+        font-size: 2rem;
+        padding: 0.5rem 1rem;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: background 0.2s;
+        width: 3rem;
+        height: 3rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .controls button:hover:not(:disabled) {
+        background: var(--accent-color);
+      }
+
+      .controls button:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+
+      .progress {
+        width: 200px;
+        height: 4px;
+        background: var(--card-bg);
+        border-radius: 2px;
+        overflow: hidden;
+      }
+
+      .progress-bar {
+        height: 100%;
+        background: var(--accent-color);
+        transition: width 0.3s ease;
+        width: 0%;
+      }
+
+      /* Section navigation */
+      .section-nav {
+        position: fixed;
+        top: 1.2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 0.4rem;
+        z-index: 100;
+        background: rgba(30, 30, 30, 0.85);
+        backdrop-filter: blur(10px);
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+      }
+
+      .section-dot {
+        width: 2.4rem;
+        height: 6px;
+        border-radius: 3px;
+        background: rgba(255, 255, 255, 0.15);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+      }
+
+      /* Invisible expanded hit area for easier clicking */
+      .section-dot::before {
+        content: "";
+        position: absolute;
+        top: -8px;
+        bottom: -8px;
+        left: -2px;
+        right: -2px;
+      }
+
+      .section-dot:hover {
+        background: rgba(255, 255, 255, 0.35);
+      }
+
+      .section-dot.active {
+        background: var(--accent-color);
+        width: 3rem;
+      }
+
+      .section-dot .section-tooltip {
+        display: none;
+        position: absolute;
+        top: 18px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--card-bg);
+        color: var(--text-color);
+        padding: 0.3rem 0.6rem;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        white-space: nowrap;
+        pointer-events: none;
+      }
+
+      .section-dot:hover .section-tooltip {
+        display: block;
+      }
+
+      /* Per-section slide progress (Instagram stories style) */
+      .section-progress {
+        position: fixed;
+        top: 3.2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 3px;
+        z-index: 100;
+        max-width: 400px;
+        width: 80%;
+        transition: opacity 0.3s ease;
+      }
+
+      .section-progress-segment {
+        flex: 1;
+        height: 3px;
+        border-radius: 2px;
+        background: rgba(255, 255, 255, 0.15);
+        overflow: hidden;
+        transition: background 0.3s ease;
+      }
+
+      .section-progress-segment.done {
+        background: var(--accent-color);
+      }
+
+      .section-progress-segment.current {
+        background: linear-gradient(
+          90deg,
+          var(--accent-color) 50%,
+          rgba(255, 255, 255, 0.15) 50%
+        );
+        background: var(--accent-color);
+        opacity: 0.7;
+      }
+
+      .section-progress-label {
+        position: fixed;
+        top: 3.8rem;
+        left: 50%;
+        transform: translateX(-50%);
+        color: var(--secondary-color);
+        font-size: 0.65rem;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        z-index: 100;
+        opacity: 0.6;
+      }
+
+      @media (max-width: 768px) {
+        .section-progress {
+          top: 2.4rem;
+          width: 85%;
+        }
+        .section-progress-label {
+          top: 3rem;
+          font-size: 0.6rem;
+        }
+      }
+
+      /* Media grid styles */
+      .media-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        max-width: 500px;
+        width: 90%;
+        margin-top: 1.5rem;
+      }
+
+      .media-card {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 1rem;
+        text-align: center;
+      }
+
+      .media-card .media-icon {
+        font-size: 1.8rem;
+        margin-bottom: 0.3rem;
+      }
+
+      .media-card .media-count {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--accent-color);
+      }
+
+      .media-card .media-label {
+        font-size: 0.8rem;
+        color: var(--secondary-color);
+        margin-top: 0.2rem;
+      }
+
+      @media (max-width: 768px) {
+        .media-grid {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 0.6rem;
+        }
+        .section-nav {
+          top: 0.6rem;
+          gap: 0.2rem;
+          padding: 0.3rem 0.5rem;
+        }
+        .section-dot {
+          width: 1.8rem;
+        }
+        .section-dot.active {
+          width: 2.4rem;
+        }
+      }
+
+      .stat-row {
+        margin-top: 2rem;
+        display: flex;
+        gap: 3rem;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .stat-item {
+        text-align: center;
+      }
+
+      .stat-item p:first-child {
+        color: var(--secondary-color);
+        margin-bottom: 0.5rem;
+      }
+
+      .stat-item p:last-child {
+        font-size: 2rem;
+        font-weight: 700;
+      }
+
+      .chart-container {
+        width: 80%;
+        max-width: 600px;
+        height: 400px;
+      }
+
+      /* Top 10 Table Styles */
+      .top10-table {
+        width: 90%;
+        max-width: 600px;
+        margin-top: 1.5rem;
+        border-collapse: separate;
+        border-spacing: 0 0.4rem;
+      }
+
+      .top10-table tr {
+        background: var(--card-bg);
+        border-radius: 8px;
+      }
+
+      .top10-table td {
+        padding: 0.7rem 1rem;
+        font-size: clamp(0.85rem, 2.5vw, 1.1rem);
+      }
+
+      .top10-table td:first-child {
+        border-radius: 8px 0 0 8px;
+        width: 2.5rem;
+        text-align: center;
+        color: var(--secondary-color);
+        font-weight: 700;
+      }
+
+      .top10-table td:nth-child(2) {
+        text-align: left;
+        font-weight: 600;
+        max-width: 280px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .top10-table td:last-child {
+        border-radius: 0 8px 8px 0;
+        text-align: right;
+        color: var(--accent-color);
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .top10-table tr:nth-child(1) td:first-child {
+        color: #ffd700;
+      }
+      .top10-table tr:nth-child(2) td:first-child {
+        color: #c0c0c0;
+      }
+      .top10-table tr:nth-child(3) td:first-child {
+        color: #cd7f32;
+      }
+
+      @media (max-width: 768px) {
+        .slide {
+          padding: 1rem;
+        }
+
+        h1 {
+          font-size: clamp(2rem, 8vw, 4rem);
+        }
+
+        .stat-row {
+          gap: 2rem;
+        }
+
+        .chart-container {
+          width: 90%;
+          height: 300px;
+        }
+
+        .controls {
+          bottom: 1rem;
+          gap: 1rem;
+        }
+
+        .progress {
+          width: 150px;
+        }
+
+        .top10-table {
+          width: 95%;
+        }
+
+        .top10-table td {
+          padding: 0.5rem 0.6rem;
+        }
+      }
+
+      /* Response comparison bars */
+      .response-bars {
+        width: 90%;
+        max-width: 500px;
+        margin-top: 1.5rem;
+      }
+
+      .response-bar-row {
+        margin-bottom: 1.2rem;
+      }
+
+      .response-bar-label {
+        font-weight: 600;
+        font-size: 0.95rem;
+        margin-bottom: 0.4rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .response-bar-pair {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+
+      .response-bar-track {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.8rem;
+      }
+
+      .response-bar-track .bar-who {
+        width: 2.5rem;
+        text-align: right;
+        color: var(--secondary-color);
+        font-size: 0.75rem;
+        flex-shrink: 0;
+      }
+
+      .response-bar-track .bar-fill {
+        height: 14px;
+        border-radius: 7px;
+        min-width: 4px;
+        transition: width 0.5s ease;
+      }
+
+      .response-bar-track .bar-fill.you {
+        background: var(--accent-color);
+      }
+
+      .response-bar-track .bar-fill.them {
+        background: rgba(255, 255, 255, 0.25);
+      }
+
+      .response-bar-track .bar-time {
+        font-size: 0.8rem;
+        font-weight: 600;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      /* First/Last message styles */
+      .chat-thread {
+        display: flex;
+        flex-direction: column;
+        width: 90%;
+        max-width: 400px;
+        gap: 0.3rem;
+        margin-top: 1rem;
+        overflow-y: auto;
+        max-height: 55vh;
+      }
+
+      .message-bubble {
+        background: var(--card-bg);
+        border-radius: 16px;
+        padding: 0.7rem 1rem;
+        max-width: 85%;
+        text-align: left;
+        position: relative;
+        font-size: 1rem;
+        line-height: 1.4;
+        word-break: break-word;
+      }
+
+      .message-bubble.highlight {
+        padding: 1rem 1.2rem;
+        font-size: 1.15rem;
+        box-shadow: 0 0 12px rgba(37, 211, 102, 0.3);
+        border: 1px solid var(--accent-color);
+      }
+
+      .message-bubble.context {
+        opacity: 0.55;
+        font-size: 0.9rem;
+      }
+
+      .message-bubble.sent {
+        background: #005c4b;
+        border-bottom-right-radius: 4px;
+        align-self: flex-end;
+      }
+
+      .message-bubble.received {
+        border-bottom-left-radius: 4px;
+        align-self: flex-start;
+      }
+
+      .message-meta {
+        font-size: 0.65rem;
+        color: var(--secondary-color);
+        text-align: right;
+        margin-top: 0.2rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="presentation">
+      <!-- SECTION: Overview -->
+      <!-- Slide 1: Welcome -->
+      <section class="slide active" data-section="Overview">
+        <h1>Your<br />WhatsApp<br />Wrapped</h1>
+        <h2>2025</h2>
+        <p
+          style="
+            margin-top: 2rem;
+            color: var(--secondary-color);
+            font-size: 1.2rem;
+          "
+        >
+          Tap or press → to continue
+        </p>
+      </section>
+
+      <!-- Slide 2: Total Messages -->
+      <section class="slide" data-section="Overview">
+        <p style="color: var(--secondary-color); font-size: 1.5rem">You sent</p>
+        <div class="stat-big">12,453</div>
+        <h2>messages</h2>
+        <div class="stat-row">
+          <div class="stat-item">
+            <p>Sent</p>
+            <p>5,821</p>
+          </div>
+          <div class="stat-item">
+            <p>Received</p>
+            <p>6,632</p>
+          </div>
+          <div class="stat-item">
+            <p>Per Day</p>
+            <p>34.1</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide: Sent vs Received Pie Chart -->
+      <section class="slide" data-section="Overview">
+        <h2 style="margin-bottom: 1.5rem">Sent vs Received</h2>
+        <div class="chart-container" style="max-width: 400px; height: 350px">
+          <canvas data-chart="sentReceived"></canvas>
+        </div>
+      </section>
+
+      <!-- SECTION: Chats -->
+      <!-- Slide 3: Top Individual Chat #1 -->
+      
+      <section class="slide" data-section="Chats">
+        <p style="color: var(--secondary-color); font-size: 1.5rem">
+          Your #1 individual chat
+        </p>
+        <h1>Alex Chen</h1>
+        <p style="font-size: 2rem; margin-top: 1rem">
+          <span style="color: var(--accent-color); font-weight: 700">
+            1,247
+          </span>
+          messages
+        </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+          "
+        >
+          ≈ 3.4 per
+          day
+        </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1rem;
+            margin-top: 0.3rem;
+          "
+        >
+          You sent
+          <span style="color: var(--accent-color); font-weight: 600"
+            >44.7%</span
+          >
+          of messages
+        </p>
+      </section>
+      
+
+      <!-- Slide 4: Top Individual Chat #2 -->
+      
+      <section class="slide" data-section="Chats">
+        <p style="color: var(--secondary-color); font-size: 1.5rem">
+          Your #2 individual chat
+        </p>
+        <h1>Jordan Smith</h1>
+        <p style="font-size: 2rem; margin-top: 1rem">
+          <span style="color: var(--accent-color); font-weight: 700">
+            892
+          </span>
+          messages
+        </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+          "
+        >
+          ≈ 2.4 per
+          day
+        </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1rem;
+            margin-top: 0.3rem;
+          "
+        >
+          You sent
+          <span style="color: var(--accent-color); font-weight: 600"
+            >54.7%</span
+          >
+          of messages
+        </p>
+      </section>
+      
+
+      <!-- Slide 5: Top Individual Chat #3 -->
+      
+      <section class="slide" data-section="Chats">
+        <p style="color: var(--secondary-color); font-size: 1.5rem">
+          Your #3 individual chat
+        </p>
+        <h1>Sam Wilson</h1>
+        <p style="font-size: 2rem; margin-top: 1rem">
+          <span style="color: var(--accent-color); font-weight: 700">
+            634
+          </span>
+          messages
+        </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+          "
+        >
+          ≈ 1.7 per
+          day
+        </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1rem;
+            margin-top: 0.3rem;
+          "
+        >
+          You sent
+          <span style="color: var(--accent-color); font-weight: 600"
+            >43.1%</span
+          >
+          of messages
+        </p>
+      </section>
+      
+
+      <!-- Slide: Top 10 Individual Chats Table -->
+      
+      <section class="slide" data-section="Chats">
+        <h2 style="margin-bottom: 0.5rem">Top 10 Chats</h2>
+        <table class="top10-table">
+          
+          <tr>
+            <td>1</td>
+            <td>Alex Chen</td>
+            <td>
+              1,247
+              <span
+                style="
+                  color: var(--secondary-color);
+                  font-size: 0.75em;
+                  font-weight: 400;
+                "
+              >
+                (≈3.4/d · 44.7% sent)
+              </span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td>2</td>
+            <td>Jordan Smith</td>
+            <td>
+              892
+              <span
+                style="
+                  color: var(--secondary-color);
+                  font-size: 0.75em;
+                  font-weight: 400;
+                "
+              >
+                (≈2.4/d · 54.7% sent)
+              </span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td>3</td>
+            <td>Sam Wilson</td>
+            <td>
+              634
+              <span
+                style="
+                  color: var(--secondary-color);
+                  font-size: 0.75em;
+                  font-weight: 400;
+                "
+              >
+                (≈1.7/d · 43.1% sent)
+              </span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td>4</td>
+            <td>Taylor Brown</td>
+            <td>
+              521
+              <span
+                style="
+                  color: var(--secondary-color);
+                  font-size: 0.75em;
+                  font-weight: 400;
+                "
+              >
+                (≈1.4/d · 55.3% sent)
+              </span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td>5</td>
+            <td>Morgan Davis</td>
+            <td>
+              445
+              <span
+                style="
+                  color: var(--secondary-color);
+                  font-size: 0.75em;
+                  font-weight: 400;
+                "
+              >
+                (≈1.2/d · 53.0% sent)
+              </span>
+            </td>
+          </tr>
+          
+        </table>
+      </section>
+      
+
+      <!-- Slide: Top Chat Timeline -->
+      
+      <section class="slide" data-section="Chats">
+        <h2 style="margin-bottom: 0.5rem">
+          Alex Chen
+        </h2>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+          "
+        >
+          Your year together
+        </p>
+        <div class="chart-container">
+          <canvas data-chart="chatTimeline"></canvas>
+        </div>
+      </section>
+      
+
+      <!-- SECTION: Groups -->
+      <!-- Slide 6: Top Group #1 -->
+      
+      <section class="slide" data-section="Groups">
+        <p style="color: var(--secondary-color); font-size: 1.5rem">
+          Your #1 group chat
+        </p>
+        <h1>Squad Group Chat 💬</h1>
+        <p style="font-size: 2rem; margin-top: 1rem">
+          <span style="color: var(--accent-color); font-weight: 700">
+            1,834
+          </span>
+          messages
+        </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+          "
+        >
+          ≈ 5.0 per day
+        </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1rem;
+            margin-top: 0.3rem;
+          "
+        >
+          You sent
+          <span style="color: var(--accent-color); font-weight: 600"
+            >5.6%</span
+          >
+          of messages
+        </p>
+      </section>
+      
+
+      <!-- Slide 7: Top Group #2 -->
+      
+      <section class="slide" data-section="Groups">
+        <p style="color: var(--secondary-color); font-size: 1.5rem">
+          Your #2 group chat
+        </p>
+        <h1>Work Team</h1>
+        <p style="font-size: 2rem; margin-top: 1rem">
+          <span style="color: var(--accent-color); font-weight: 700">
+            956
+          </span>
+          messages
+        </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+          "
+        >
+          ≈ 2.6 per day
+        </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1rem;
+            margin-top: 0.3rem;
+          "
+        >
+          You sent
+          <span style="color: var(--accent-color); font-weight: 600"
+            >3.5%</span
+          >
+          of messages
+        </p>
+      </section>
+      
+
+      <!-- Slide 8: Top Group #3 -->
+      
+      <section class="slide" data-section="Groups">
+        <p style="color: var(--secondary-color); font-size: 1.5rem">
+          Your #3 group chat
+        </p>
+        <h1>Family Group 👨‍👩‍👧‍👦</h1>
+        <p style="font-size: 2rem; margin-top: 1rem">
+          <span style="color: var(--accent-color); font-weight: 700">
+            789
+          </span>
+          messages
+        </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+          "
+        >
+          ≈ 2.2 per day
+        </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1rem;
+            margin-top: 0.3rem;
+          "
+        >
+          You sent
+          <span style="color: var(--accent-color); font-weight: 600"
+            >26.1%</span
+          >
+          of messages
+        </p>
+      </section>
+      
+
+      <!-- Slide: Top 10 Group Chats Table -->
+      
+      <section class="slide" data-section="Groups">
+        <h2 style="margin-bottom: 0.5rem">Top 10 Groups</h2>
+        <table class="top10-table">
+          
+          <tr>
+            <td>1</td>
+            <td>Squad Group Chat 💬</td>
+            <td>
+              1,834
+              <span
+                style="
+                  color: var(--secondary-color);
+                  font-size: 0.75em;
+                  font-weight: 400;
+                "
+              >
+                (≈5.0/d · 5.6% sent)
+              </span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td>2</td>
+            <td>Work Team</td>
+            <td>
+              956
+              <span
+                style="
+                  color: var(--secondary-color);
+                  font-size: 0.75em;
+                  font-weight: 400;
+                "
+              >
+                (≈2.6/d · 3.5% sent)
+              </span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td>3</td>
+            <td>Family Group 👨‍👩‍👧‍👦</td>
+            <td>
+              789
+              <span
+                style="
+                  color: var(--secondary-color);
+                  font-size: 0.75em;
+                  font-weight: 400;
+                "
+              >
+                (≈2.2/d · 26.1% sent)
+              </span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td>4</td>
+            <td>College Friends</td>
+            <td>
+              623
+              <span
+                style="
+                  color: var(--secondary-color);
+                  font-size: 0.75em;
+                  font-weight: 400;
+                "
+              >
+                (≈1.7/d · 43.5% sent)
+              </span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td>5</td>
+            <td>Gaming Crew 🎮</td>
+            <td>
+              412
+              <span
+                style="
+                  color: var(--secondary-color);
+                  font-size: 0.75em;
+                  font-weight: 400;
+                "
+              >
+                (≈1.1/d · 44.2% sent)
+              </span>
+            </td>
+          </tr>
+          
+        </table>
+      </section>
+      
+
+      <!-- Slide: Top Group Timeline -->
+      
+      <section class="slide" data-section="Groups">
+        <h2 style="margin-bottom: 0.5rem">
+          Squad Group Chat 💬
+        </h2>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+          "
+        >
+          Your year together
+        </p>
+        <div class="chart-container">
+          <canvas data-chart="groupTimeline"></canvas>
+        </div>
+      </section>
+      
+
+      <!-- SECTION: Content -->
+      <!-- Slide: Media Breakdown -->
+      
+      <section class="slide" data-section="Content">
+        <h2 style="margin-bottom: 0.5rem">Your media</h2>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1rem;
+            margin-bottom: 1rem;
+          "
+        >
+          What you shared & received
+        </p>
+        <div class="media-grid">
+            
+          <div class="media-card">
+            <div class="media-icon">📷</div>
+            <div class="media-count">1,234</div>
+            <div class="media-label">Photos</div>
+          </div>
+            
+          <div class="media-card">
+            <div class="media-icon">🏷️</div>
+            <div class="media-count">567</div>
+            <div class="media-label">Stickers</div>
+          </div>
+            
+          <div class="media-card">
+            <div class="media-icon">🎵</div>
+            <div class="media-count">234</div>
+            <div class="media-label">Audio</div>
+          </div>
+            
+          <div class="media-card">
+            <div class="media-icon">🔗</div>
+            <div class="media-count">189</div>
+            <div class="media-label">Links</div>
+          </div>
+            
+          <div class="media-card">
+            <div class="media-icon">🎬</div>
+            <div class="media-count">156</div>
+            <div class="media-label">Videos</div>
+          </div>
+            
+          <div class="media-card">
+            <div class="media-icon">🎞️</div>
+            <div class="media-count">134</div>
+            <div class="media-label">GIFs</div>
+          </div>
+            
+          <div class="media-card">
+            <div class="media-icon">📎</div>
+            <div class="media-count">98</div>
+            <div class="media-label">Reactions</div>
+          </div>
+            
+          <div class="media-card">
+            <div class="media-icon">📞</div>
+            <div class="media-count">45</div>
+            <div class="media-label">Calls</div>
+          </div>
+            
+          <div class="media-card">
+            <div class="media-icon">📄</div>
+            <div class="media-count">23</div>
+            <div class="media-label">Documents</div>
+          </div>
+               
+        </div>
+      </section>
+      
+
+      <!-- Slide: Busiest Day -->
+      
+      <section class="slide" data-section="Content">
+        <p style="color: var(--secondary-color); font-size: 1.5rem">
+          Your busiest day was
+        </p>
+        <h1 style="font-size: clamp(2rem, 8vw, 5rem)">
+          2025-09-15
+        </h1>
+        <div
+          class="stat-big"
+          style="font-size: clamp(3rem, 10vw, 8rem); margin-top: 1rem"
+        >
+          187
+        </div>
+        <h2 style="font-size: clamp(1.5rem, 4vw, 3rem)">messages</h2>
+      </section>
+      
+
+      <!-- Slide: First Message Sent -->
+      
+      <section class="slide" data-section="Content">
+        <p style="color: var(--secondary-color); font-size: 1.3rem">
+          First message you sent in 2025
+        </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 0.85rem;
+            margin-top: 0.3rem;
+          "
+        >
+          To
+          <span style="color: var(--text-color); font-weight: 600"
+            >Alex Chen</span
+          >
+          · 2025-01-01
+        </p>
+        <div class="chat-thread">
+          <div class="message-bubble highlight sent">
+            Happy New Year! 🎉
+            <div class="message-meta">00:05</div>
+          </div>
+           
+          <div
+            class="message-bubble context sent"
+          >
+            Happy New Year! 🎉
+            <div class="message-meta">00:05</div>
+          </div>
+          
+          <div
+            class="message-bubble context received"
+          >
+            You too!
+            <div class="message-meta">00:12</div>
+          </div>
+          
+          <div
+            class="message-bubble context sent"
+          >
+            Ready for 2025?
+            <div class="message-meta">00:15</div>
+          </div>
+           
+        </div>
+      </section>
+      
+
+      <!-- Slide: First Message Received -->
+      
+      <section class="slide" data-section="Content">
+        <p style="color: var(--secondary-color); font-size: 1.3rem">
+          First message you received in 2025
+        </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 0.85rem;
+            margin-top: 0.3rem;
+          "
+        >
+          From
+          <span style="color: var(--text-color); font-weight: 600"
+            >Jordan Smith</span
+          >
+          · 2025-01-01
+        </p>
+        <div class="chat-thread">
+          <div class="message-bubble highlight received">
+            Happy New Year!! ✨
+            <div class="message-meta">00:01</div>
+          </div>
+           
+          <div
+            class="message-bubble context received"
+          >
+            Happy New Year!! ✨
+            <div class="message-meta">00:01</div>
+          </div>
+          
+          <div
+            class="message-bubble context sent"
+          >
+            Thank you! 🥳
+            <div class="message-meta">00:08</div>
+          </div>
+          
+          <div
+            class="message-bubble context received"
+          >
+            Let's make it great
+            <div class="message-meta">00:10</div>
+          </div>
+           
+        </div>
+      </section>
+      
+
+      <!-- Slide: Last Message Sent -->
+      
+      <section class="slide" data-section="Content">
+        <p style="color: var(--secondary-color); font-size: 1.3rem">
+          Last message you sent in 2025
+        </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 0.85rem;
+            margin-top: 0.3rem;
+          "
+        >
+          To
+          <span style="color: var(--text-color); font-weight: 600"
+            >Morgan Davis</span
+          >
+          · 2025-12-31
+        </p>
+        <div class="chat-thread">
+           
+          <div
+            class="message-bubble context sent"
+          >
+            About to leave for the party
+            <div class="message-meta">23:55</div>
+          </div>
+          
+          <div
+            class="message-bubble context received"
+          >
+            Have fun!
+            <div class="message-meta">23:56</div>
+          </div>
+          
+          <div
+            class="message-bubble context sent"
+          >
+            See you next year!
+            <div class="message-meta">23:58</div>
+          </div>
+           
+          <div class="message-bubble highlight sent">
+            See you next year!
+            <div class="message-meta">23:58</div>
+          </div>
+        </div>
+      </section>
+      
+
+      <!-- Slide: Last Message Received -->
+      
+      <section class="slide" data-section="Content">
+        <p style="color: var(--secondary-color); font-size: 1.3rem">
+          Last message you received in 2025
+        </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 0.85rem;
+            margin-top: 0.3rem;
+          "
+        >
+          From
+          <span style="color: var(--text-color); font-weight: 600"
+            >Taylor Brown</span
+          >
+          · 2025-12-31
+        </p>
+        <div class="chat-thread">
+           
+          <div
+            class="message-bubble context sent"
+          >
+            Long day today
+            <div class="message-meta">23:40</div>
+          </div>
+          
+          <div
+            class="message-bubble context received"
+          >
+            Get some rest
+            <div class="message-meta">23:42</div>
+          </div>
+          
+          <div
+            class="message-bubble context received"
+          >
+            Good night! 🌙
+            <div class="message-meta">23:45</div>
+          </div>
+           
+          <div class="message-bubble highlight received">
+            Good night! 🌙
+            <div class="message-meta">23:45</div>
+          </div>
+        </div>
+      </section>
+      
+
+      <!-- Slide: Longest Gap -->
+      
+      <section class="slide" data-section="Content">
+        <p style="color: var(--secondary-color); font-size: 1.5rem">
+          Longest silence
+        </p>
+        <div class="stat-big" style="font-size: clamp(3rem, 10vw, 7rem)">
+          210.0
+          days
+        </div>
+        <p style="font-size: 1.3rem; margin-top: 1rem">of radio silence with</p>
+        <h2 style="color: var(--accent-color); margin-top: 0.5rem">
+          Old Friend
+        </h2>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 0.9rem;
+            margin-top: 1rem;
+          "
+        >
+          … but then you started talking again 😄
+        </p>
+      </section>
+      
+
+      <!-- Slide: Top Emojis -->
+      
+      <section class="slide" data-section="Content">
+        <h2 style="margin-bottom: 0.5rem">Your Top Emojis</h2>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1rem;
+            margin-bottom: 1rem;
+          "
+        >
+          Most used by you
+        </p>
+        <table class="top10-table">
+          
+          <tr>
+            <td>1</td>
+            <td style="font-size: 1.6rem">😂</td>
+            <td>234</td>
+          </tr>
+          
+          <tr>
+            <td>2</td>
+            <td style="font-size: 1.6rem">❤️</td>
+            <td>189</td>
+          </tr>
+          
+          <tr>
+            <td>3</td>
+            <td style="font-size: 1.6rem">👍</td>
+            <td>156</td>
+          </tr>
+          
+          <tr>
+            <td>4</td>
+            <td style="font-size: 1.6rem">🔥</td>
+            <td>134</td>
+          </tr>
+          
+          <tr>
+            <td>5</td>
+            <td style="font-size: 1.6rem">✨</td>
+            <td>112</td>
+          </tr>
+          
+          <tr>
+            <td>6</td>
+            <td style="font-size: 1.6rem">🎉</td>
+            <td>98</td>
+          </tr>
+          
+          <tr>
+            <td>7</td>
+            <td style="font-size: 1.6rem">😭</td>
+            <td>87</td>
+          </tr>
+          
+          <tr>
+            <td>8</td>
+            <td style="font-size: 1.6rem">🥰</td>
+            <td>76</td>
+          </tr>
+          
+          <tr>
+            <td>9</td>
+            <td style="font-size: 1.6rem">💀</td>
+            <td>65</td>
+          </tr>
+          
+          <tr>
+            <td>10</td>
+            <td style="font-size: 1.6rem">🤣</td>
+            <td>54</td>
+          </tr>
+          
+        </table>
+      </section>
+      
+
+      <!-- Slide: Most Sent Message Hero -->
+      
+      <section class="slide" data-section="Content">
+        <p style="color: var(--secondary-color); font-size: 1.5rem">
+          Your most sent message
+        </p>
+        <h1
+          style="
+            font-size: clamp(2rem, 6vw, 4rem);
+            margin-top: 1rem;
+            word-break: break-word;
+            max-width: 80%;
+          "
+        >
+          "Haha"
+        </h1>
+        <p style="font-size: 2rem; margin-top: 1.5rem">
+          <span style="color: var(--accent-color); font-weight: 700">
+            87
+          </span>
+          times
+        </p>
+      </section>
+      
+
+      <!-- Slide: Top 10 Most Sent Messages Table -->
+      
+      <section class="slide" data-section="Content">
+        <h2 style="margin-bottom: 0.5rem">Top 10 Sent Messages</h2>
+        <table class="top10-table">
+          
+          <tr>
+            <td>1</td>
+            <td
+              style="
+                max-width: 320px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              "
+            >
+              Haha
+            </td>
+            <td>87x</td>
+          </tr>
+          
+          <tr>
+            <td>2</td>
+            <td
+              style="
+                max-width: 320px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              "
+            >
+              Yeah
+            </td>
+            <td>65x</td>
+          </tr>
+          
+          <tr>
+            <td>3</td>
+            <td
+              style="
+                max-width: 320px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              "
+            >
+              Ok
+            </td>
+            <td>54x</td>
+          </tr>
+          
+          <tr>
+            <td>4</td>
+            <td
+              style="
+                max-width: 320px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              "
+            >
+              Thanks
+            </td>
+            <td>43x</td>
+          </tr>
+          
+          <tr>
+            <td>5</td>
+            <td
+              style="
+                max-width: 320px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              "
+            >
+              No way
+            </td>
+            <td>38x</td>
+          </tr>
+          
+          <tr>
+            <td>6</td>
+            <td
+              style="
+                max-width: 320px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              "
+            >
+              Let's go
+            </td>
+            <td>32x</td>
+          </tr>
+          
+          <tr>
+            <td>7</td>
+            <td
+              style="
+                max-width: 320px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              "
+            >
+              Perfect
+            </td>
+            <td>28x</td>
+          </tr>
+          
+          <tr>
+            <td>8</td>
+            <td
+              style="
+                max-width: 320px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              "
+            >
+              Awesome
+            </td>
+            <td>24x</td>
+          </tr>
+          
+          <tr>
+            <td>9</td>
+            <td
+              style="
+                max-width: 320px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              "
+            >
+              I see
+            </td>
+            <td>21x</td>
+          </tr>
+          
+          <tr>
+            <td>10</td>
+            <td
+              style="
+                max-width: 320px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              "
+            >
+              For real
+            </td>
+            <td>19x</td>
+          </tr>
+          
+        </table>
+      </section>
+      
+
+      <!-- SECTION: Activity -->
+      <!-- Slide: Messages per Month -->
+      <section class="slide" data-section="Activity">
+        <h2 style="margin-bottom: 2rem">Messages per month</h2>
+        <div class="chart-container">
+          <canvas data-chart="monthly"></canvas>
+        </div>
+      </section>
+
+      <!-- Slide: 24h Activity -->
+      <section class="slide" data-section="Activity">
+        <h2 style="margin-bottom: 2rem">Your 24-hour activity</h2>
+        <div class="chart-container">
+          <canvas data-chart="allHours"></canvas>
+        </div>
+      </section>
+
+      <!-- Slide: Peak Hours -->
+      <section class="slide" data-section="Activity">
+        <h2 style="margin-bottom: 2rem">Your peak hours</h2>
+        <div class="chart-container">
+          <canvas data-chart="hours"></canvas>
+        </div>
+      </section>
+
+      <!-- Slide: Days of Week -->
+      <section class="slide" data-section="Activity">
+        <h2 style="margin-bottom: 2rem">Your messaging week</h2>
+        <div class="chart-container">
+          <canvas data-chart="days"></canvas>
+        </div>
+      </section>
+
+      <!-- Slide: Response Time -->
+      
+      <section class="slide" data-section="Activity">
+        <p style="color: var(--secondary-color); font-size: 1.5rem">
+          Your typical response time
+        </p>
+        <div class="stat-big" style="font-size: clamp(3rem, 10vw, 7rem)">
+           4m 5s 
+        </div>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1rem;
+            margin-top: 0.5rem;
+          "
+        >
+          median response time
+        </p>
+        <div class="stat-row" style="margin-top: 2rem">
+          <div class="stat-item">
+            <p>&lt; 1 min</p>
+            <p>35.2%</p>
+          </div>
+          <div class="stat-item">
+            <p>&lt; 5 min</p>
+            <p>52.8%</p>
+          </div>
+          <div class="stat-item">
+            <p>&lt; 1 hour</p>
+            <p>78.9%</p>
+          </div>
+        </div>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 0.85rem;
+            margin-top: 1.5rem;
+          "
+        >
+          Based on 3,245 responses
+          in individual chats
+        </p>
+      </section>
+      
+
+      <!-- Slide: Response Time Comparison -->
+      
+      <section class="slide" data-section="Activity">
+        <h2 style="margin-bottom: 0.5rem">Who replies faster?</h2>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+          "
+        >
+          Median response time per chat
+        </p>
+        <div class="response-bars">
+          
+          <div class="response-bar-row">
+            <div class="response-bar-label">Alex Chen</div>
+            <div class="response-bar-pair">
+              <div class="response-bar-track">
+                <span class="bar-who">You</span>
+                <div
+                  class="bar-fill you"
+                  data-seconds="45"
+                ></div>
+                <span class="bar-time">
+                  45s
+                </span>
+              </div>
+              <div class="response-bar-track">
+                <span class="bar-who">Them</span>
+                <div
+                  class="bar-fill them"
+                  data-seconds="32"
+                ></div>
+                <span class="bar-time">
+                  32s
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="response-bar-row">
+            <div class="response-bar-label">Jordan Smith</div>
+            <div class="response-bar-pair">
+              <div class="response-bar-track">
+                <span class="bar-who">You</span>
+                <div
+                  class="bar-fill you"
+                  data-seconds="189"
+                ></div>
+                <span class="bar-time">
+                  3m 9s
+                </span>
+              </div>
+              <div class="response-bar-track">
+                <span class="bar-who">Them</span>
+                <div
+                  class="bar-fill them"
+                  data-seconds="156"
+                ></div>
+                <span class="bar-time">
+                  2m 36s
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="response-bar-row">
+            <div class="response-bar-label">Sam Wilson</div>
+            <div class="response-bar-pair">
+              <div class="response-bar-track">
+                <span class="bar-who">You</span>
+                <div
+                  class="bar-fill you"
+                  data-seconds="78"
+                ></div>
+                <span class="bar-time">
+                  1m 18s
+                </span>
+              </div>
+              <div class="response-bar-track">
+                <span class="bar-who">Them</span>
+                <div
+                  class="bar-fill them"
+                  data-seconds="34"
+                ></div>
+                <span class="bar-time">
+                  34s
+                </span>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      </section>
+      
+
+      <!-- SECTION: Profile -->
+      <!-- Slide: Conversation Stats -->
+      <section class="slide" data-section="Profile">
+        <h2>The details</h2>
+        <div style="margin-top: 2rem; text-align: center">
+          <p style="color: var(--secondary-color); margin-bottom: 0.5rem">
+            Total conversations
+          </p>
+          <p class="stat-big" style="font-size: 6rem">
+            47
+          </p>
+
+          
+          <p
+            style="
+              color: var(--secondary-color);
+              margin-top: 2rem;
+              font-size: 1.2rem;
+            "
+          >
+            From 2025-01-01 to 2025-12-31
+          </p>
+          
+        </div>
+      </section>
+
+      <!-- Slide: Personality -->
+      <section class="slide" data-section="Profile">
+        <h2 style="margin-bottom: 1rem">You are a</h2>
+        <h1 style="color: var(--accent-color)">Conversationalist</h1>
+        <p
+          style="
+            margin-top: 1rem;
+            color: var(--secondary-color);
+            max-width: 600px;
+            font-size: 1.2rem;
+            line-height: 1.6;
+          "
+        >
+          You love a good chat! You're most active on weekday evenings and have strong connections with your closest friends.
+        </p>
+      </section>
+
+      <!-- Slide: Thank You -->
+      <section class="slide" data-section="Profile">
+        <h2>Thanks for chatting!</h2>
+        <p
+          style="
+            margin-top: 2rem;
+            color: var(--secondary-color);
+            max-width: 600px;
+            text-align: center;
+            font-size: 1.2rem;
+            line-height: 1.6;
+          "
+        >
+          All your data was processed locally on your device. Nothing was sent
+          anywhere.
+        </p>
+        <p
+          style="
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            color: var(--secondary-color);
+          "
+        >
+          Generated with WhatsApp Wrapped MVP
+        </p>
+      </section>
+    </div>
+
+    <!-- Section Navigation -->
+    <nav class="section-nav" id="sectionNav"></nav>
+
+    <!-- Per-section slide progress -->
+    <div class="section-progress" id="sectionProgress"></div>
+    <div class="section-progress-label" id="sectionProgressLabel"></div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <button class="prev" aria-label="Previous slide">←</button>
+      <div class="progress">
+        <div class="progress-bar"></div>
+      </div>
+      <button class="next" aria-label="Next slide">→</button>
+    </div>
+
+    <!-- Chart.js from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <!-- Data -->
+    <script>
+      const wrappedData = {"year": 2025, "total_messages": 12453, "sent": 5821, "received": 6632, "total_conversations": 47, "days_in_period": 365, "messages_per_day": 34.1, "date_range": {"start": "2025-01-01", "end": "2025-12-31"}, "top_individual_chats": [{"name": "Alex Chen", "count": 1247, "sent": 558, "sent_pct": 44.7}, {"name": "Jordan Smith", "count": 892, "sent": 488, "sent_pct": 54.7}, {"name": "Sam Wilson", "count": 634, "sent": 273, "sent_pct": 43.1}, {"name": "Taylor Brown", "count": 521, "sent": 288, "sent_pct": 55.3}, {"name": "Morgan Davis", "count": 445, "sent": 236, "sent_pct": 53.0}], "top_groups": [{"name": "Squad Group Chat \ud83d\udcac", "count": 1834, "sent": 103, "sent_pct": 5.6}, {"name": "Work Team", "count": 956, "sent": 33, "sent_pct": 3.5}, {"name": "Family Group \ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66", "count": 789, "sent": 206, "sent_pct": 26.1}, {"name": "College Friends", "count": 623, "sent": 271, "sent_pct": 43.5}, {"name": "Gaming Crew \ud83c\udfae", "count": 412, "sent": 182, "sent_pct": 44.2}], "top_hours": [{"hour": 18, "count": 1245}, {"hour": 19, "count": 1123}, {"hour": 17, "count": 1089}, {"hour": 20, "count": 987}, {"hour": 12, "count": 876}], "all_hours": [{"hour": 0, "count": 45}, {"hour": 1, "count": 12}, {"hour": 2, "count": 8}, {"hour": 3, "count": 5}, {"hour": 4, "count": 15}, {"hour": 5, "count": 32}, {"hour": 6, "count": 123}, {"hour": 7, "count": 289}, {"hour": 8, "count": 456}, {"hour": 9, "count": 567}, {"hour": 10, "count": 678}, {"hour": 11, "count": 789}, {"hour": 12, "count": 876}, {"hour": 13, "count": 765}, {"hour": 14, "count": 890}, {"hour": 15, "count": 923}, {"hour": 16, "count": 1012}, {"hour": 17, "count": 1089}, {"hour": 18, "count": 1245}, {"hour": 19, "count": 1123}, {"hour": 20, "count": 987}, {"hour": 21, "count": 654}, {"hour": 22, "count": 432}, {"hour": 23, "count": 189}], "days_of_week": [{"day": "Sunday", "count": 1654}, {"day": "Monday", "count": 1823}, {"day": "Tuesday", "count": 1892}, {"day": "Wednesday", "count": 1765}, {"day": "Thursday", "count": 1923}, {"day": "Friday", "count": 2101}, {"day": "Saturday", "count": 1295}], "busiest_day": {"date": "2025-09-15", "count": 187}, "top_emojis": [{"emoji": "\ud83d\ude02", "count": 234}, {"emoji": "\u2764\ufe0f", "count": 189}, {"emoji": "\ud83d\udc4d", "count": 156}, {"emoji": "\ud83d\udd25", "count": 134}, {"emoji": "\u2728", "count": 112}, {"emoji": "\ud83c\udf89", "count": 98}, {"emoji": "\ud83d\ude2d", "count": 87}, {"emoji": "\ud83e\udd70", "count": 76}, {"emoji": "\ud83d\udc80", "count": 65}, {"emoji": "\ud83e\udd23", "count": 54}], "top_messages": [{"text": "Haha", "count": 87}, {"text": "Yeah", "count": 65}, {"text": "Ok", "count": 54}, {"text": "Thanks", "count": 43}, {"text": "No way", "count": 38}, {"text": "Let's go", "count": 32}, {"text": "Perfect", "count": 28}, {"text": "Awesome", "count": 24}, {"text": "I see", "count": 21}, {"text": "For real", "count": 19}], "media_counts": [{"type": "Text", "count": 9856}, {"type": "Photos", "count": 1234}, {"type": "Stickers", "count": 567}, {"type": "Audio", "count": 234}, {"type": "Links", "count": 189}, {"type": "Videos", "count": 156}, {"type": "GIFs", "count": 134}, {"type": "Reactions", "count": 98}, {"type": "Calls", "count": 45}, {"type": "Documents", "count": 23}, {"type": "Locations", "count": 12}, {"type": "Polls", "count": 5}], "messages_per_month": [{"month": 1, "name": "Jan", "count": 1023}, {"month": 2, "name": "Feb", "count": 892}, {"month": 3, "name": "Mar", "count": 945}, {"month": 4, "name": "Apr", "count": 1089}, {"month": 5, "name": "May", "count": 1234}, {"month": 6, "name": "Jun", "count": 876}, {"month": 7, "name": "Jul", "count": 765}, {"month": 8, "name": "Aug", "count": 654}, {"month": 9, "name": "Sep", "count": 1456}, {"month": 10, "name": "Oct", "count": 987}, {"month": 11, "name": "Nov", "count": 1123}, {"month": 12, "name": "Dec", "count": 1409}], "response_time": {"median_seconds": 245, "average_seconds": 1890, "total_responses": 3245, "under_1min_pct": 35.2, "under_5min_pct": 52.8, "under_1h_pct": 78.9}, "chat_timelines": {"top_chat": {"name": "Alex Chen", "months": [{"month": 1, "name": "Jan", "label": "Jan", "count": 145}, {"month": 2, "name": "Feb", "label": "Feb", "count": 98}, {"month": 3, "name": "Mar", "label": "Mar", "count": 112}, {"month": 4, "name": "Apr", "label": "Apr", "count": 134}, {"month": 5, "name": "May", "label": "May", "count": 156}, {"month": 6, "name": "Jun", "label": "Jun", "count": 87}, {"month": 7, "name": "Jul", "label": "Jul", "count": 76}, {"month": 8, "name": "Aug", "label": "Aug", "count": 54}, {"month": 9, "name": "Sep", "label": "Sep", "count": 167}, {"month": 10, "name": "Oct", "label": "Oct", "count": 89}, {"month": 11, "name": "Nov", "label": "Nov", "count": 78}, {"month": 12, "name": "Dec", "label": "Dec", "count": 51}], "is_lifetime": false}, "top_group": {"name": "Squad Group Chat \ud83d\udcac", "months": [{"month": 1, "name": "Jan", "label": "Jan", "count": 234}, {"month": 2, "name": "Feb", "label": "Feb", "count": 189}, {"month": 3, "name": "Mar", "label": "Mar", "count": 201}, {"month": 4, "name": "Apr", "label": "Apr", "count": 178}, {"month": 5, "name": "May", "label": "May", "count": 267}, {"month": 6, "name": "Jun", "label": "Jun", "count": 123}, {"month": 7, "name": "Jul", "label": "Jul", "count": 98}, {"month": 8, "name": "Aug", "label": "Aug", "count": 87}, {"month": 9, "name": "Sep", "label": "Sep", "count": 189}, {"month": 10, "name": "Oct", "label": "Oct", "count": 67}, {"month": 11, "name": "Nov", "label": "Nov", "count": 89}, {"month": 12, "name": "Dec", "label": "Dec", "count": 112}], "is_lifetime": false}}, "response_comparison": [{"name": "Alex Chen", "you_median": 45, "them_median": 32, "you_replies": 567, "them_replies": 612}, {"name": "Jordan Smith", "you_median": 189, "them_median": 156, "you_replies": 423, "them_replies": 445}, {"name": "Sam Wilson", "you_median": 78, "them_median": 34, "you_replies": 289, "them_replies": 312}], "first_message_sent": {"text": "Happy New Year! \ud83c\udf89", "chat": "Alex Chen", "from_me": true, "date": "2025-01-01", "time": "00:05", "context": [{"text": "Happy New Year! \ud83c\udf89", "from_me": true, "time": "00:05"}, {"text": "You too!", "from_me": false, "time": "00:12"}, {"text": "Ready for 2025?", "from_me": true, "time": "00:15"}]}, "first_message_received": {"text": "Happy New Year!! \u2728", "chat": "Jordan Smith", "from_me": false, "date": "2025-01-01", "time": "00:01", "context": [{"text": "Happy New Year!! \u2728", "from_me": false, "time": "00:01"}, {"text": "Thank you! \ud83e\udd73", "from_me": true, "time": "00:08"}, {"text": "Let's make it great", "from_me": false, "time": "00:10"}]}, "last_message_sent": {"text": "See you next year!", "chat": "Morgan Davis", "from_me": true, "date": "2025-12-31", "time": "23:58", "context": [{"text": "About to leave for the party", "from_me": true, "time": "23:55"}, {"text": "Have fun!", "from_me": false, "time": "23:56"}, {"text": "See you next year!", "from_me": true, "time": "23:58"}]}, "last_message_received": {"text": "Good night! \ud83c\udf19", "chat": "Taylor Brown", "from_me": false, "date": "2025-12-31", "time": "23:45", "context": [{"text": "Long day today", "from_me": true, "time": "23:40"}, {"text": "Get some rest", "from_me": false, "time": "23:42"}, {"text": "Good night! \ud83c\udf19", "from_me": false, "time": "23:45"}]}, "longest_gap": {"chat": "Old Friend", "seconds": 18144000, "days": 210.0}, "personality": "Conversationalist", "description": "You love a good chat! You're most active on weekday evenings and have strong connections with your closest friends."};
+    </script>
+
+    <!-- Application Logic -->
+    <script>
+      // State
+      let currentSlide = 0;
+      const slides = document.querySelectorAll(".slide");
+      const totalSlides = slides.length;
+      const progressBar = document.querySelector(".progress-bar");
+      const prevButton = document.querySelector(".prev");
+      const nextButton = document.querySelector(".next");
+
+      // Chart instances
+      const chartsInitialized = new Set();
+
+      // Build section map from data-section attributes
+      const sectionMap = [];
+      const sectionNames = [];
+      slides.forEach((slide, i) => {
+        const sec = slide.dataset.section || "Other";
+        if (!sectionNames.includes(sec)) {
+          sectionNames.push(sec);
+          sectionMap.push({ name: sec, start: i, end: i });
+        } else {
+          sectionMap[sectionMap.length - 1].end = i;
+        }
+      });
+
+      // Build section nav dots
+      const sectionNav = document.getElementById("sectionNav");
+      sectionMap.forEach((sec, i) => {
+        const dot = document.createElement("div");
+        dot.className = "section-dot" + (i === 0 ? " active" : "");
+        dot.dataset.sectionIndex = i;
+        dot.innerHTML = `<span class="section-tooltip">${sec.name}</span>`;
+        dot.addEventListener("click", () => goToSlide(sec.start));
+        sectionNav.appendChild(dot);
+      });
+
+      function getActiveSectionIndex() {
+        for (let i = 0; i < sectionMap.length; i++) {
+          if (
+            currentSlide >= sectionMap[i].start &&
+            currentSlide <= sectionMap[i].end
+          ) {
+            return i;
+          }
+        }
+        return 0;
+      }
+
+      function updateSectionNav() {
+        const activeIdx = getActiveSectionIndex();
+        document.querySelectorAll(".section-dot").forEach((dot, i) => {
+          dot.classList.toggle("active", i === activeIdx);
+        });
+        updateSectionProgress(activeIdx);
+      }
+
+      // Per-section segmented progress bar
+      const sectionProgressEl = document.getElementById("sectionProgress");
+      const sectionProgressLabel = document.getElementById(
+        "sectionProgressLabel",
+      );
+
+      function updateSectionProgress(secIdx) {
+        const sec = sectionMap[secIdx];
+        const slideCount = sec.end - sec.start + 1;
+        const posInSection = currentSlide - sec.start; // 0-based
+
+        // Build segments
+        let html = "";
+        for (let i = 0; i < slideCount; i++) {
+          if (i < posInSection) {
+            html += '<div class="section-progress-segment done"></div>';
+          } else if (i === posInSection) {
+            html += '<div class="section-progress-segment current"></div>';
+          } else {
+            html += '<div class="section-progress-segment"></div>';
+          }
+        }
+        sectionProgressEl.innerHTML = html;
+
+        // Label
+        sectionProgressLabel.textContent = `${sec.name} — ${posInSection + 1} / ${slideCount}`;
+      }
+
+      // Update progress bar and buttons
+      function updateProgress() {
+        const progress = ((currentSlide + 1) / totalSlides) * 100;
+        progressBar.style.width = `${progress}%`;
+
+        // Update button states
+        prevButton.disabled = currentSlide === 0;
+        nextButton.disabled = currentSlide === totalSlides - 1;
+
+        updateSectionNav();
+      }
+
+      // Navigate to slide
+      function goToSlide(index) {
+        if (index < 0 || index >= totalSlides) return;
+
+        slides[currentSlide].classList.remove("active");
+        slides[index].classList.add("active");
+        currentSlide = index;
+        updateProgress();
+
+        // Initialize charts if needed
+        initializeChartsForSlide(index);
+      }
+
+      // Initialize charts for a slide
+      function initializeChartsForSlide(slideIndex) {
+        if (chartsInitialized.has(slideIndex)) return;
+
+        const slide = slides[slideIndex];
+        const canvas = slide.querySelector("canvas");
+        if (!canvas) return;
+
+        const chartType = canvas.dataset.chart;
+
+        switch (chartType) {
+          case "sentReceived":
+            createSentReceivedChart(canvas);
+            break;
+          case "monthly":
+            createMonthlyChart(canvas);
+            break;
+          case "allHours":
+            createAllHoursChart(canvas);
+            break;
+          case "hours":
+            createHourlyChart(canvas);
+            break;
+          case "days":
+            createDailyChart(canvas);
+            break;
+          case "chatTimeline":
+            createTimelineChart(canvas, "top_chat");
+            break;
+          case "groupTimeline":
+            createTimelineChart(canvas, "top_group");
+            break;
+        }
+
+        // Animate response comparison bars if present
+        const bars = slide.querySelectorAll(".bar-fill[data-seconds]");
+        if (bars.length > 0) {
+          const allSeconds = Array.from(bars).map((b) =>
+            parseFloat(b.dataset.seconds),
+          );
+          const maxSeconds = Math.max(...allSeconds);
+          bars.forEach((bar) => {
+            const pct =
+              maxSeconds > 0
+                ? (parseFloat(bar.dataset.seconds) / maxSeconds) * 100
+                : 0;
+            bar.style.width = Math.max(pct, 3) + "%";
+          });
+        }
+
+        chartsInitialized.add(slideIndex);
+      }
+
+      // Create timeline line chart for a specific chat
+      function createTimelineChart(canvas, key) {
+        const timelines = wrappedData.chat_timelines;
+        if (!timelines || !timelines[key]) return;
+
+        const data = timelines[key].months;
+        if (!data || data.length === 0) return;
+
+        const labels = data.map((d) => d.label || d.name || d.month);
+        const counts = data.map((d) => d.count);
+
+        // For lifetime mode with many months, reduce label density
+        const isLifetime = timelines[key].is_lifetime || false;
+        const maxLabels = isLifetime ? 12 : 12;
+
+        new Chart(canvas, {
+          type: "line",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                data: counts,
+                borderColor: "#25D366",
+                backgroundColor: "rgba(37, 211, 102, 0.1)",
+                fill: true,
+                tension: 0.4,
+                pointRadius: isLifetime ? 1.5 : 4,
+                pointBackgroundColor: "#25D366",
+                pointBorderColor: "#25D366",
+                borderWidth: isLifetime ? 1.8 : 2.5,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.8)",
+                titleColor: "#fff",
+                bodyColor: "#fff",
+                callbacks: {
+                  label: (ctx) => ctx.parsed.y.toLocaleString() + " messages",
+                },
+              },
+            },
+            scales: {
+              x: {
+                ticks: {
+                  color: "rgba(255,255,255,0.6)",
+                  font: { size: isLifetime ? 9 : 11 },
+                  maxRotation: isLifetime ? 45 : 0,
+                  maxTicksLimit: maxLabels,
+                },
+                grid: { display: false },
+              },
+              y: {
+                beginAtZero: true,
+                ticks: { color: "rgba(255,255,255,0.6)", font: { size: 11 } },
+                grid: { color: "rgba(255,255,255,0.05)" },
+              },
+            },
+          },
+        });
+      }
+
+      // Create sent vs received pie chart
+      function createSentReceivedChart(canvas) {
+        const sent = wrappedData.sent || 0;
+        const received = wrappedData.received || 0;
+        const total = sent + received;
+        if (total === 0) {
+          canvas.parentElement.innerHTML =
+            '<p style="color: var(--secondary-color);">No data available</p>';
+          return;
+        }
+        const sentPct = ((sent / total) * 100).toFixed(1);
+        const receivedPct = ((received / total) * 100).toFixed(1);
+
+        new Chart(canvas, {
+          type: "doughnut",
+          data: {
+            labels: [`Sent (${sentPct}%)`, `Received (${receivedPct}%)`],
+            datasets: [
+              {
+                data: [sent, received],
+                backgroundColor: [
+                  "rgba(37, 211, 102, 0.9)",
+                  "rgba(255, 255, 255, 0.15)",
+                ],
+                borderColor: [
+                  "rgba(37, 211, 102, 1)",
+                  "rgba(255, 255, 255, 0.3)",
+                ],
+                borderWidth: 2,
+                hoverOffset: 8,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "55%",
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  color: "#ffffff",
+                  font: { size: 14, weight: "600" },
+                  padding: 20,
+                  usePointStyle: true,
+                  pointStyleWidth: 16,
+                },
+              },
+              tooltip: {
+                callbacks: {
+                  label: function (ctx) {
+                    return `${ctx.label}: ${ctx.raw.toLocaleString()} messages`;
+                  },
+                },
+              },
+            },
+          },
+        });
+      }
+
+      // Create monthly messages chart
+      function createMonthlyChart(canvas) {
+        const monthData = wrappedData.messages_per_month || [];
+        if (monthData.length === 0) {
+          canvas.parentElement.innerHTML =
+            '<p style="color: var(--secondary-color);">No data available</p>';
+          return;
+        }
+
+        const allMonths = [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+        ];
+        const monthMap = {};
+        monthData.forEach((m) => (monthMap[m.month] = m.count));
+
+        const labels = [];
+        const counts = [];
+        const colors = [];
+        let maxCount = 0;
+        for (let i = 1; i <= 12; i++) {
+          labels.push(allMonths[i - 1]);
+          const c = monthMap[i] || 0;
+          counts.push(c);
+          if (c > maxCount) maxCount = c;
+        }
+        for (let i = 0; i < 12; i++) {
+          const intensity = maxCount > 0 ? counts[i] / maxCount : 0;
+          const alpha = 0.2 + intensity * 0.7;
+          colors.push(`rgba(37, 211, 102, ${alpha})`);
+        }
+
+        new Chart(canvas, {
+          type: "bar",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: "Messages",
+                data: counts,
+                backgroundColor: colors,
+                borderColor: "rgba(37, 211, 102, 1)",
+                borderWidth: 1,
+                borderRadius: 6,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: { color: "#b3b3b3" },
+                grid: { color: "rgba(255, 255, 255, 0.1)" },
+              },
+              x: {
+                ticks: { color: "#b3b3b3" },
+                grid: { display: false },
+              },
+            },
+          },
+        });
+      }
+
+      // Create full 24-hour activity chart
+      function createAllHoursChart(canvas) {
+        const hourData = wrappedData.all_hours || wrappedData.top_hours || [];
+        if (hourData.length === 0) {
+          canvas.parentElement.innerHTML =
+            '<p style="color: var(--secondary-color);">No data available</p>';
+          return;
+        }
+
+        // Build a map and fill all 24 hours
+        const hourMap = {};
+        hourData.forEach((h) => (hourMap[h.hour] = h.count));
+        const labels = [];
+        const counts = [];
+        const colors = [];
+        let maxCount = 0;
+        for (let i = 0; i < 24; i++) {
+          labels.push(`${String(i).padStart(2, "0")}:00`);
+          const c = hourMap[i] || 0;
+          counts.push(c);
+          if (c > maxCount) maxCount = c;
+        }
+        // Gradient: highlight peak hours
+        for (let i = 0; i < 24; i++) {
+          const intensity = maxCount > 0 ? counts[i] / maxCount : 0;
+          const alpha = 0.2 + intensity * 0.7;
+          colors.push(`rgba(37, 211, 102, ${alpha})`);
+        }
+
+        new Chart(canvas, {
+          type: "bar",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: "Messages",
+                data: counts,
+                backgroundColor: colors,
+                borderColor: "rgba(37, 211, 102, 1)",
+                borderWidth: 1,
+                borderRadius: 4,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: { color: "#b3b3b3" },
+                grid: { color: "rgba(255, 255, 255, 0.1)" },
+              },
+              x: {
+                ticks: {
+                  color: "#b3b3b3",
+                  maxRotation: 45,
+                  font: { size: 10 },
+                },
+                grid: { display: false },
+              },
+            },
+          },
+        });
+      }
+
+      // Create hourly chart (top 5)
+      function createHourlyChart(canvas) {
+        if (!wrappedData.top_hours || wrappedData.top_hours.length === 0) {
+          canvas.parentElement.innerHTML =
+            '<p style="color: var(--secondary-color);">No data available</p>';
+          return;
+        }
+
+        const hours = wrappedData.top_hours.map(
+          (h) => `${String(h.hour).padStart(2, "0")}:00`,
+        );
+        const counts = wrappedData.top_hours.map((h) => h.count);
+
+        new Chart(canvas, {
+          type: "bar",
+          data: {
+            labels: hours,
+            datasets: [
+              {
+                label: "Messages",
+                data: counts,
+                backgroundColor: "rgba(37, 211, 102, 0.8)",
+                borderColor: "rgba(37, 211, 102, 1)",
+                borderWidth: 2,
+                borderRadius: 8,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: { color: "#b3b3b3" },
+                grid: { color: "rgba(255, 255, 255, 0.1)" },
+              },
+              x: {
+                ticks: { color: "#b3b3b3" },
+                grid: { display: false },
+              },
+            },
+          },
+        });
+      }
+
+      // Create daily chart (chronological, Mon-Sun, with intensity gradient)
+      function createDailyChart(canvas) {
+        if (
+          !wrappedData.days_of_week ||
+          wrappedData.days_of_week.length === 0
+        ) {
+          canvas.parentElement.innerHTML =
+            '<p style="color: var(--secondary-color);">No data available</p>';
+          return;
+        }
+
+        // Sort chronologically: Mon, Tue, Wed, Thu, Fri, Sat, Sun
+        const dayOrder = [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+          "Sunday",
+        ];
+        const dayMap = {};
+        wrappedData.days_of_week.forEach((d) => (dayMap[d.day] = d.count));
+
+        const labels = [];
+        const counts = [];
+        const colors = [];
+        let maxCount = 0;
+        for (const day of dayOrder) {
+          labels.push(day.substring(0, 3));
+          const c = dayMap[day] || 0;
+          counts.push(c);
+          if (c > maxCount) maxCount = c;
+        }
+        for (let i = 0; i < counts.length; i++) {
+          const intensity = maxCount > 0 ? counts[i] / maxCount : 0;
+          const alpha = 0.2 + intensity * 0.7;
+          colors.push(`rgba(37, 211, 102, ${alpha})`);
+        }
+
+        new Chart(canvas, {
+          type: "bar",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: "Messages",
+                data: counts,
+                backgroundColor: colors,
+                borderColor: "rgba(37, 211, 102, 1)",
+                borderWidth: 1,
+                borderRadius: 8,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: { color: "#b3b3b3" },
+                grid: { color: "rgba(255, 255, 255, 0.1)" },
+              },
+              x: {
+                ticks: { color: "#b3b3b3" },
+                grid: { display: false },
+              },
+            },
+          },
+        });
+      }
+
+      // Keyboard navigation
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowRight" || e.key === " ") {
+          e.preventDefault();
+          goToSlide(currentSlide + 1);
+        } else if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          goToSlide(currentSlide - 1);
+        }
+      });
+
+      // Touch navigation
+      let touchStartX = 0;
+      let touchStartY = 0;
+
+      document.addEventListener("touchstart", (e) => {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      });
+
+      document.addEventListener("touchend", (e) => {
+        const touchEndX = e.changedTouches[0].clientX;
+        const touchEndY = e.changedTouches[0].clientY;
+        const diffX = touchStartX - touchEndX;
+        const diffY = Math.abs(touchStartY - touchEndY);
+
+        // Only trigger if horizontal swipe (not vertical scroll)
+        if (Math.abs(diffX) > 50 && diffY < 30) {
+          if (diffX > 0) {
+            goToSlide(currentSlide + 1);
+          } else {
+            goToSlide(currentSlide - 1);
+          }
+        }
+      });
+
+      // Button navigation
+      prevButton.addEventListener("click", () => {
+        goToSlide(currentSlide - 1);
+      });
+
+      nextButton.addEventListener("click", () => {
+        goToSlide(currentSlide + 1);
+      });
+
+      // Initialize
+      updateProgress();
+      initializeChartsForSlide(0); // Initialize first slide charts if any
+    </script>
+  </body>
+</html>
