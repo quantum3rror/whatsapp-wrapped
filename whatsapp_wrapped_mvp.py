@@ -608,21 +608,22 @@ def analyze_whatsapp_db(db_path, year=None):
     raw_media = cursor.fetchall()
     media_type_map = {
         0: 'Text', 1: 'Photos', 2: 'Videos', 3: 'Audio',
-        5: 'Locations', 6: 'Calls', 7: 'Links',
+        4: 'Contact Cards', 5: 'Locations', 6: 'Calls', 7: 'Links',
         8: 'Documents', 10: 'Deleted', 11: 'Stickers',
-        14: 'GIFs', 15: 'Contact Cards'
+        14: 'GIFs', 15: 'Stickers',
+        38: 'View Once', 39: 'View Once',
+        46: 'Polls', 59: 'Reactions',
     }
     media_counts = []
     for mtype, cnt in raw_media:
-        label = media_type_map.get(mtype, f'Other ({mtype})')
-        # Group all unmapped types into 'Other'
-        if mtype not in media_type_map:
-            # Check if 'Other' already exists
-            existing = next((m for m in media_counts if m['type'] == 'Other'), None)
-            if existing:
-                existing['count'] += cnt
-                continue
+        label = media_type_map.get(mtype, None)
+        if label is None:
             label = 'Other'
+        # Merge duplicate labels (e.g. Stickers type 11 + 15, View Once 38 + 39)
+        existing = next((m for m in media_counts if m['type'] == label), None)
+        if existing:
+            existing['count'] += cnt
+            continue
         media_counts.append({'type': label, 'count': cnt})
     media_counts.sort(key=lambda x: x['count'], reverse=True)
 
@@ -810,15 +811,20 @@ def analyze_whatsapp_db(db_path, year=None):
     # First and last message of the year (with context messages)
     print("\n✉️  First & last message...")
 
-    def fetch_message_with_context(cursor, date_filter, order, context_count=3):
-        """Fetch the first/last message and surrounding context from the same chat"""
+    def fetch_message_with_context(cursor, date_filter, order, from_me_filter=None, context_count=3):
+        """Fetch the first/last message and surrounding context from the same chat.
+        from_me_filter: None=any, 1=sent, 0=received"""
+        from_me_clause = ""
+        if from_me_filter is not None:
+            from_me_clause = f"AND m.ZISFROMME = {from_me_filter}"
+
         cursor.execute(f"""
             SELECT m.ZTEXT, cs.ZPARTNERNAME, m.ZISFROMME,
                    m.ZMESSAGEDATE, m.ZCHATSESSION
             FROM ZWAMESSAGE m
             JOIN ZWACHATSESSION cs ON m.ZCHATSESSION = cs.Z_PK
             WHERE m.ZTEXT IS NOT NULL AND m.ZMESSAGEDATE IS NOT NULL
-              AND cs.ZPARTNERNAME IS NOT NULL {date_filter}
+              AND cs.ZPARTNERNAME IS NOT NULL {date_filter} {from_me_clause}
             ORDER BY m.ZMESSAGEDATE {order} LIMIT 1
         """)
         row = cursor.fetchone()
@@ -871,17 +877,21 @@ def analyze_whatsapp_db(db_path, year=None):
         main_msg['context'] = context_msgs
         return main_msg
 
-    first_message = fetch_message_with_context(cursor, date_filter, 'ASC')
-    if first_message:
-        who = "You" if first_message['from_me'] else first_message['chat']
-        print(f"  First: \"{first_message['text'][:50]}\" - {who} - {first_message['date']} {first_message['time']}")
-        print(f"    + {len(first_message['context'])} context messages after")
+    # Fetch first sent and first received
+    first_message_sent = fetch_message_with_context(cursor, date_filter, 'ASC', from_me_filter=1)
+    first_message_received = fetch_message_with_context(cursor, date_filter, 'ASC', from_me_filter=0)
+    if first_message_sent:
+        print(f"  First sent: \"{first_message_sent['text'][:50]}\" → {first_message_sent['chat']} - {first_message_sent['date']} {first_message_sent['time']}")
+    if first_message_received:
+        print(f"  First received: \"{first_message_received['text'][:50]}\" ← {first_message_received['chat']} - {first_message_received['date']} {first_message_received['time']}")
 
-    last_message = fetch_message_with_context(cursor, date_filter, 'DESC')
-    if last_message:
-        who = "You" if last_message['from_me'] else last_message['chat']
-        print(f"  Last: \"{last_message['text'][:50]}\" - {who} - {last_message['date']} {last_message['time']}")
-        print(f"    + {len(last_message['context'])} context messages before")
+    # Fetch last sent and last received
+    last_message_sent = fetch_message_with_context(cursor, date_filter, 'DESC', from_me_filter=1)
+    last_message_received = fetch_message_with_context(cursor, date_filter, 'DESC', from_me_filter=0)
+    if last_message_sent:
+        print(f"  Last sent: \"{last_message_sent['text'][:50]}\" → {last_message_sent['chat']} - {last_message_sent['date']} {last_message_sent['time']}")
+    if last_message_received:
+        print(f"  Last received: \"{last_message_received['text'][:50]}\" ← {last_message_received['chat']} - {last_message_received['date']} {last_message_received['time']}")
 
     # Longest gap in a chat
     print("\n🕳️  Longest gap...")
@@ -939,8 +949,10 @@ def analyze_whatsapp_db(db_path, year=None):
         "response_time": response_time,
         "chat_timelines": chat_timelines,
         "response_comparison": response_comparison,
-        "first_message": first_message,
-        "last_message": last_message,
+        "first_message_sent": first_message_sent,
+        "first_message_received": first_message_received,
+        "last_message_sent": last_message_sent,
+        "last_message_received": last_message_received,
         "longest_gap": longest_gap
     }
 
@@ -1016,8 +1028,10 @@ def generate_html_wrapped(stats, output_file):
         response_time=stats.get('response_time'),
         chat_timelines=stats.get('chat_timelines', {}),
         response_comparison=stats.get('response_comparison', []),
-        first_message=stats.get('first_message'),
-        last_message=stats.get('last_message'),
+        first_message_sent=stats.get('first_message_sent'),
+        first_message_received=stats.get('first_message_received'),
+        last_message_sent=stats.get('last_message_sent'),
+        last_message_received=stats.get('last_message_received'),
         longest_gap=stats.get('longest_gap'),
         data_json=json.dumps(stats)
     )

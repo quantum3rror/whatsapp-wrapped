@@ -994,11 +994,11 @@
       </section>
       {% endif %}
 
-      <!-- Slide: First Message of the Year -->
-      {% if first_message %}
+      <!-- Slide: First Message Sent -->
+      {% if first_message_sent %}
       <section class="slide" data-section="Content">
         <p style="color: var(--secondary-color); font-size: 1.3rem">
-          Your first message {% if year %}of {{ year }}{% endif %}
+          First message you sent {% if year %}in {{ year }}{% endif %}
         </p>
         <p
           style="
@@ -1007,20 +1007,19 @@
             margin-top: 0.3rem;
           "
         >
-          {% if first_message.from_me %}To{% else %}From{% endif %}
+          To
           <span style="color: var(--text-color); font-weight: 600"
-            >{{ first_message.chat }}</span
+            >{{ first_message_sent.chat }}</span
           >
-          · {{ first_message.date }}
+          · {{ first_message_sent.date }}
         </p>
         <div class="chat-thread">
-          <div
-            class="message-bubble highlight {{ 'sent' if first_message.from_me else 'received' }}"
-          >
-            {{ first_message.text }}
-            <div class="message-meta">{{ first_message.time }}</div>
+          <div class="message-bubble highlight sent">
+            {{ first_message_sent.text }}
+            <div class="message-meta">{{ first_message_sent.time }}</div>
           </div>
-          {% if first_message.context %} {% for ctx in first_message.context %}
+          {% if first_message_sent.context %} {% for ctx in
+          first_message_sent.context %}
           <div
             class="message-bubble context {{ 'sent' if ctx.from_me else 'received' }}"
           >
@@ -1032,11 +1031,11 @@
       </section>
       {% endif %}
 
-      <!-- Slide: Last Message of the Year -->
-      {% if last_message %}
+      <!-- Slide: First Message Received -->
+      {% if first_message_received %}
       <section class="slide" data-section="Content">
         <p style="color: var(--secondary-color); font-size: 1.3rem">
-          Your last message {% if year %}of {{ year }}{% endif %}
+          First message you received {% if year %}in {{ year }}{% endif %}
         </p>
         <p
           style="
@@ -1045,14 +1044,19 @@
             margin-top: 0.3rem;
           "
         >
-          {% if last_message.from_me %}To{% else %}From{% endif %}
+          From
           <span style="color: var(--text-color); font-weight: 600"
-            >{{ last_message.chat }}</span
+            >{{ first_message_received.chat }}</span
           >
-          · {{ last_message.date }}
+          · {{ first_message_received.date }}
         </p>
         <div class="chat-thread">
-          {% if last_message.context %} {% for ctx in last_message.context %}
+          <div class="message-bubble highlight received">
+            {{ first_message_received.text }}
+            <div class="message-meta">{{ first_message_received.time }}</div>
+          </div>
+          {% if first_message_received.context %} {% for ctx in
+          first_message_received.context %}
           <div
             class="message-bubble context {{ 'sent' if ctx.from_me else 'received' }}"
           >
@@ -1060,11 +1064,79 @@
             <div class="message-meta">{{ ctx.time }}</div>
           </div>
           {% endfor %} {% endif %}
-          <div
-            class="message-bubble highlight {{ 'sent' if last_message.from_me else 'received' }}"
+        </div>
+      </section>
+      {% endif %}
+
+      <!-- Slide: Last Message Sent -->
+      {% if last_message_sent %}
+      <section class="slide" data-section="Content">
+        <p style="color: var(--secondary-color); font-size: 1.3rem">
+          Last message you sent {% if year %}in {{ year }}{% endif %}
+        </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 0.85rem;
+            margin-top: 0.3rem;
+          "
+        >
+          To
+          <span style="color: var(--text-color); font-weight: 600"
+            >{{ last_message_sent.chat }}</span
           >
-            {{ last_message.text }}
-            <div class="message-meta">{{ last_message.time }}</div>
+          · {{ last_message_sent.date }}
+        </p>
+        <div class="chat-thread">
+          {% if last_message_sent.context %} {% for ctx in
+          last_message_sent.context %}
+          <div
+            class="message-bubble context {{ 'sent' if ctx.from_me else 'received' }}"
+          >
+            {{ ctx.text }}
+            <div class="message-meta">{{ ctx.time }}</div>
+          </div>
+          {% endfor %} {% endif %}
+          <div class="message-bubble highlight sent">
+            {{ last_message_sent.text }}
+            <div class="message-meta">{{ last_message_sent.time }}</div>
+          </div>
+        </div>
+      </section>
+      {% endif %}
+
+      <!-- Slide: Last Message Received -->
+      {% if last_message_received %}
+      <section class="slide" data-section="Content">
+        <p style="color: var(--secondary-color); font-size: 1.3rem">
+          Last message you received {% if year %}in {{ year }}{% endif %}
+        </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 0.85rem;
+            margin-top: 0.3rem;
+          "
+        >
+          From
+          <span style="color: var(--text-color); font-weight: 600"
+            >{{ last_message_received.chat }}</span
+          >
+          · {{ last_message_received.date }}
+        </p>
+        <div class="chat-thread">
+          {% if last_message_received.context %} {% for ctx in
+          last_message_received.context %}
+          <div
+            class="message-bubble context {{ 'sent' if ctx.from_me else 'received' }}"
+          >
+            {{ ctx.text }}
+            <div class="message-meta">{{ ctx.time }}</div>
+          </div>
+          {% endfor %} {% endif %}
+          <div class="message-bubble highlight received">
+            {{ last_message_received.text }}
+            <div class="message-meta">{{ last_message_received.time }}</div>
           </div>
         </div>
       </section>
