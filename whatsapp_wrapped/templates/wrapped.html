@@ -442,6 +442,101 @@
           padding: 0.5rem 0.6rem;
         }
       }
+
+      /* Response comparison bars */
+      .response-bars {
+        width: 90%;
+        max-width: 500px;
+        margin-top: 1.5rem;
+      }
+
+      .response-bar-row {
+        margin-bottom: 1.2rem;
+      }
+
+      .response-bar-label {
+        font-weight: 600;
+        font-size: 0.95rem;
+        margin-bottom: 0.4rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .response-bar-pair {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+
+      .response-bar-track {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.8rem;
+      }
+
+      .response-bar-track .bar-who {
+        width: 2.5rem;
+        text-align: right;
+        color: var(--secondary-color);
+        font-size: 0.75rem;
+        flex-shrink: 0;
+      }
+
+      .response-bar-track .bar-fill {
+        height: 14px;
+        border-radius: 7px;
+        min-width: 4px;
+        transition: width 0.5s ease;
+      }
+
+      .response-bar-track .bar-fill.you {
+        background: var(--accent-color);
+      }
+
+      .response-bar-track .bar-fill.them {
+        background: rgba(255, 255, 255, 0.25);
+      }
+
+      .response-bar-track .bar-time {
+        font-size: 0.8rem;
+        font-weight: 600;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      /* First/Last message styles */
+      .message-bubble {
+        background: var(--card-bg);
+        border-radius: 16px;
+        padding: 1.2rem 1.5rem;
+        max-width: 80%;
+        margin-top: 1rem;
+        text-align: left;
+        position: relative;
+        font-size: 1.2rem;
+        line-height: 1.5;
+        word-break: break-word;
+      }
+
+      .message-bubble.sent {
+        background: #005c4b;
+        border-bottom-right-radius: 4px;
+        align-self: flex-end;
+      }
+
+      .message-bubble.received {
+        border-bottom-left-radius: 4px;
+        align-self: flex-start;
+      }
+
+      .message-meta {
+        font-size: 0.75rem;
+        color: var(--secondary-color);
+        text-align: right;
+        margin-top: 0.3rem;
+      }
     </style>
   </head>
   <body>
@@ -638,6 +733,27 @@
       </section>
       {% endif %}
 
+      <!-- Slide: Top Chat Timeline -->
+      {% if chat_timelines and chat_timelines.top_chat %}
+      <section class="slide" data-section="Chats">
+        <h2 style="margin-bottom: 0.5rem">
+          {{ chat_timelines.top_chat.name }}
+        </h2>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+          "
+        >
+          Your year together
+        </p>
+        <div class="chart-container">
+          <canvas data-chart="chatTimeline"></canvas>
+        </div>
+      </section>
+      {% endif %}
+
       <!-- SECTION: Groups -->
       <!-- Slide 6: Top Group #1 -->
       {% if top_groups and top_groups|length > 0 and top_groups[0].name != 'No
@@ -784,6 +900,27 @@
       </section>
       {% endif %}
 
+      <!-- Slide: Top Group Timeline -->
+      {% if chat_timelines and chat_timelines.top_group %}
+      <section class="slide" data-section="Groups">
+        <h2 style="margin-bottom: 0.5rem">
+          {{ chat_timelines.top_group.name }}
+        </h2>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+          "
+        >
+          Your year together
+        </p>
+        <div class="chart-container">
+          <canvas data-chart="groupTimeline"></canvas>
+        </div>
+      </section>
+      {% endif %}
+
       <!-- SECTION: Content -->
       <!-- Slide: Media Breakdown -->
       {% if media_counts and media_counts|length > 0 %}
@@ -830,6 +967,96 @@
           {{ '{:,}'.format(busiest_day.count) }}
         </div>
         <h2 style="font-size: clamp(1.5rem, 4vw, 3rem)">messages</h2>
+      </section>
+      {% endif %}
+
+      <!-- Slide: First Message of the Year -->
+      {% if first_message %}
+      <section class="slide" data-section="Content">
+        <p style="color: var(--secondary-color); font-size: 1.5rem">
+          Your first message of {{ year }}
+        </p>
+        <div
+          class="message-bubble {{ 'sent' if first_message.from_me else 'received' }}"
+        >
+          {{ first_message.text }}
+          <div class="message-meta">{{ first_message.time }}</div>
+        </div>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1rem;
+            margin-top: 1rem;
+          "
+        >
+          {% if first_message.from_me %} To
+          <span style="color: var(--text-color); font-weight: 600"
+            >{{ first_message.chat }}</span
+          >
+          {% else %} From
+          <span style="color: var(--text-color); font-weight: 600"
+            >{{ first_message.chat }}</span
+          >
+          {% endif %} · {{ first_message.date }}
+        </p>
+      </section>
+      {% endif %}
+
+      <!-- Slide: Last Message of the Year -->
+      {% if last_message %}
+      <section class="slide" data-section="Content">
+        <p style="color: var(--secondary-color); font-size: 1.5rem">
+          Your last message of {{ year }}
+        </p>
+        <div
+          class="message-bubble {{ 'sent' if last_message.from_me else 'received' }}"
+        >
+          {{ last_message.text }}
+          <div class="message-meta">{{ last_message.time }}</div>
+        </div>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1rem;
+            margin-top: 1rem;
+          "
+        >
+          {% if last_message.from_me %} To
+          <span style="color: var(--text-color); font-weight: 600"
+            >{{ last_message.chat }}</span
+          >
+          {% else %} From
+          <span style="color: var(--text-color); font-weight: 600"
+            >{{ last_message.chat }}</span
+          >
+          {% endif %} · {{ last_message.date }}
+        </p>
+      </section>
+      {% endif %}
+
+      <!-- Slide: Longest Gap -->
+      {% if longest_gap %}
+      <section class="slide" data-section="Content">
+        <p style="color: var(--secondary-color); font-size: 1.5rem">
+          Longest silence
+        </p>
+        <div class="stat-big" style="font-size: clamp(3rem, 10vw, 7rem)">
+          {{ longest_gap.days }}{% if longest_gap.days == 1.0 %} day{% else %}
+          days{% endif %}
+        </div>
+        <p style="font-size: 1.3rem; margin-top: 1rem">of radio silence with</p>
+        <h2 style="color: var(--accent-color); margin-top: 0.5rem">
+          {{ longest_gap.chat }}
+        </h2>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 0.9rem;
+            margin-top: 1rem;
+          "
+        >
+          … but then you started talking again 😄
+        </p>
       </section>
       {% endif %}
 
@@ -988,6 +1215,57 @@
           Based on {{ '{:,}'.format(response_time.total_responses) }} responses
           in individual chats
         </p>
+      </section>
+      {% endif %}
+
+      <!-- Slide: Response Time Comparison -->
+      {% if response_comparison and response_comparison|length > 0 %}
+      <section class="slide" data-section="Activity">
+        <h2 style="margin-bottom: 0.5rem">Who replies faster?</h2>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+          "
+        >
+          Median response time per chat
+        </p>
+        <div class="response-bars">
+          {% for rc in response_comparison %}
+          <div class="response-bar-row">
+            <div class="response-bar-label">{{ rc.name }}</div>
+            <div class="response-bar-pair">
+              <div class="response-bar-track">
+                <span class="bar-who">You</span>
+                <div
+                  class="bar-fill you"
+                  data-seconds="{{ rc.you_median }}"
+                ></div>
+                <span class="bar-time">
+                  {% if rc.you_median < 60 %}{{ rc.you_median }}s{% elif
+                  rc.you_median < 3600 %}{{ (rc.you_median // 60) }}m {{
+                  (rc.you_median % 60) }}s{% else %}{{ (rc.you_median // 3600)
+                  }}h {{ ((rc.you_median % 3600) // 60) }}m{% endif %}
+                </span>
+              </div>
+              <div class="response-bar-track">
+                <span class="bar-who">Them</span>
+                <div
+                  class="bar-fill them"
+                  data-seconds="{{ rc.them_median }}"
+                ></div>
+                <span class="bar-time">
+                  {% if rc.them_median < 60 %}{{ rc.them_median }}s{% elif
+                  rc.them_median < 3600 %}{{ (rc.them_median // 60) }}m {{
+                  (rc.them_median % 60) }}s{% else %}{{ (rc.them_median // 3600)
+                  }}h {{ ((rc.them_median % 3600) // 60) }}m{% endif %}
+                </span>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
       </section>
       {% endif %}
 
@@ -1222,9 +1500,103 @@
           case "days":
             createDailyChart(canvas);
             break;
+          case "chatTimeline":
+            createTimelineChart(canvas, "top_chat");
+            break;
+          case "groupTimeline":
+            createTimelineChart(canvas, "top_group");
+            break;
+        }
+
+        // Animate response comparison bars if present
+        const bars = slide.querySelectorAll(".bar-fill[data-seconds]");
+        if (bars.length > 0) {
+          const allSeconds = Array.from(bars).map((b) =>
+            parseFloat(b.dataset.seconds),
+          );
+          const maxSeconds = Math.max(...allSeconds);
+          bars.forEach((bar) => {
+            const pct =
+              maxSeconds > 0
+                ? (parseFloat(bar.dataset.seconds) / maxSeconds) * 100
+                : 0;
+            bar.style.width = Math.max(pct, 3) + "%";
+          });
         }
 
         chartsInitialized.add(slideIndex);
+      }
+
+      // Create timeline line chart for a specific chat
+      function createTimelineChart(canvas, key) {
+        const timelines = wrappedData.chat_timelines;
+        if (!timelines || !timelines[key]) return;
+
+        const data = timelines[key].months;
+        if (!data || data.length === 0) return;
+
+        const monthNames = [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+        ];
+        const labels = data.map((d) => monthNames[d.month - 1] || d.month);
+        const counts = data.map((d) => d.count);
+
+        new Chart(canvas, {
+          type: "line",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                data: counts,
+                borderColor: "#25D366",
+                backgroundColor: "rgba(37, 211, 102, 0.1)",
+                fill: true,
+                tension: 0.4,
+                pointRadius: 4,
+                pointBackgroundColor: "#25D366",
+                pointBorderColor: "#25D366",
+                borderWidth: 2.5,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.8)",
+                titleColor: "#fff",
+                bodyColor: "#fff",
+                callbacks: {
+                  label: (ctx) => ctx.parsed.y.toLocaleString() + " messages",
+                },
+              },
+            },
+            scales: {
+              x: {
+                ticks: { color: "rgba(255,255,255,0.6)", font: { size: 11 } },
+                grid: { display: false },
+              },
+              y: {
+                beginAtZero: true,
+                ticks: { color: "rgba(255,255,255,0.6)", font: { size: 11 } },
+                grid: { color: "rgba(255,255,255,0.05)" },
+              },
+            },
+          },
+        });
       }
 
       // Create sent vs received pie chart

@@ -315,11 +315,14 @@ def find_whatsapp_db(backup_path, verbose=True):
     return None, None
 
 def _apple_timestamp_to_datetime_windows(apple_timestamp):
-    """Windows: Use timedelta (fromtimestamp has limited range)"""
+    """Windows: Use fromtimestamp for local time, fallback for edge cases"""
     if apple_timestamp is None:
         return None
     unix_timestamp = apple_timestamp + APPLE_TIMESTAMP_OFFSET
-    return datetime(1970, 1, 1) + timedelta(seconds=unix_timestamp)
+    try:
+        return datetime.fromtimestamp(unix_timestamp)
+    except (OSError, OverflowError, ValueError):
+        return datetime(1970, 1, 1) + timedelta(seconds=unix_timestamp)
 
 def _apple_timestamp_to_datetime_unix(apple_timestamp):
     """Unix (macOS/Linux): Use fromtimestamp (fully supported)"""
@@ -698,6 +701,164 @@ def analyze_whatsapp_db(db_path, year=None):
         response_time = None
         print("  No response time data available")
 
+    # Chat timeline for top 1 person and top 1 group (messages per month)
+    print("\n📈 Chat timelines...")
+    chat_timelines = {}
+    if top_individual_chats:
+        top1_name = top_individual_chats[0][0]
+        cursor.execute(f"""
+            SELECT
+                CAST(strftime('%m', datetime(m.ZMESSAGEDATE + 978307200, 'unixepoch')) AS INTEGER) as month,
+                COUNT(*) as cnt
+            FROM ZWAMESSAGE m
+            JOIN ZWACHATSESSION cs ON m.ZCHATSESSION = cs.Z_PK
+            WHERE cs.ZPARTNERNAME = ? AND m.ZMESSAGEDATE IS NOT NULL {date_filter}
+            GROUP BY month ORDER BY month
+        """, (top1_name,))
+        chat_timelines['top_chat'] = {
+            'name': top1_name,
+            'months': [{"month": m, "name": month_names[m-1], "count": c} for m, c in cursor.fetchall()]
+        }
+        print(f"  {top1_name}: {sum(x['count'] for x in chat_timelines['top_chat']['months']):,} msgs over {len(chat_timelines['top_chat']['months'])} months")
+
+    if top_groups:
+        top1_group = top_groups[0][0]
+        cursor.execute(f"""
+            SELECT
+                CAST(strftime('%m', datetime(m.ZMESSAGEDATE + 978307200, 'unixepoch')) AS INTEGER) as month,
+                COUNT(*) as cnt
+            FROM ZWAMESSAGE m
+            JOIN ZWACHATSESSION cs ON m.ZCHATSESSION = cs.Z_PK
+            WHERE cs.ZPARTNERNAME = ? AND m.ZMESSAGEDATE IS NOT NULL {date_filter}
+            GROUP BY month ORDER BY month
+        """, (top1_group,))
+        chat_timelines['top_group'] = {
+            'name': top1_group,
+            'months': [{"month": m, "name": month_names[m-1], "count": c} for m, c in cursor.fetchall()]
+        }
+        print(f"  {top1_group}: {sum(x['count'] for x in chat_timelines['top_group']['months']):,} msgs over {len(chat_timelines['top_group']['months'])} months")
+
+    # Response time comparison for top 3 individual chats
+    print("\n⚡ Response time comparison...")
+    response_comparison = []
+    if top_individual_chats:
+        top3_names = [c[0] for c in top_individual_chats[:3]]
+        for chat_name in top3_names:
+            cursor.execute(f"""
+                WITH ordered_msgs AS (
+                    SELECT m.ZMESSAGEDATE, m.ZISFROMME,
+                        LAG(m.ZMESSAGEDATE) OVER (ORDER BY m.ZMESSAGEDATE) as prev_date,
+                        LAG(m.ZISFROMME) OVER (ORDER BY m.ZMESSAGEDATE) as prev_from_me
+                    FROM ZWAMESSAGE m
+                    JOIN ZWACHATSESSION cs ON m.ZCHATSESSION = cs.Z_PK
+                    WHERE cs.ZPARTNERNAME = ? AND cs.ZSESSIONTYPE = 0
+                      AND m.ZMESSAGEDATE IS NOT NULL {date_filter}
+                )
+                SELECT
+                    ZISFROMME,
+                    (ZMESSAGEDATE - prev_date) as rt
+                FROM ordered_msgs
+                WHERE prev_from_me IS NOT NULL AND ZISFROMME != prev_from_me
+                  AND (ZMESSAGEDATE - prev_date) > 0 AND (ZMESSAGEDATE - prev_date) < 86400
+                ORDER BY ZISFROMME, rt
+            """, (chat_name,))
+            rows = cursor.fetchall()
+            you_times = [r[1] for r in rows if r[0] == 1]
+            them_times = [r[1] for r in rows if r[0] == 0]
+
+            if you_times and them_times:
+                you_med = round(statistics.median(you_times))
+                them_med = round(statistics.median(them_times))
+                entry = {
+                    'name': chat_name,
+                    'you_median': you_med,
+                    'them_median': them_med,
+                    'you_replies': len(you_times),
+                    'them_replies': len(them_times),
+                }
+                response_comparison.append(entry)
+                print(f"  {chat_name}: You {you_med}s vs Them {them_med}s")
+            else:
+                print(f"  {chat_name}: Skipped (you_replies={len(you_times)}, them_replies={len(them_times)})")
+
+    # First and last message of the year
+    print("\n✉️  First & last message...")
+    cursor.execute(f"""
+        SELECT m.ZTEXT, cs.ZPARTNERNAME, m.ZISFROMME,
+               m.ZMESSAGEDATE
+        FROM ZWAMESSAGE m
+        JOIN ZWACHATSESSION cs ON m.ZCHATSESSION = cs.Z_PK
+        WHERE m.ZTEXT IS NOT NULL AND m.ZMESSAGEDATE IS NOT NULL
+          AND cs.ZPARTNERNAME IS NOT NULL {date_filter}
+        ORDER BY m.ZMESSAGEDATE ASC LIMIT 1
+    """)
+    first_msg_row = cursor.fetchone()
+    first_message = None
+    if first_msg_row:
+        dt_obj = apple_timestamp_to_datetime(first_msg_row[3])
+        first_message = {
+            'text': first_msg_row[0][:100],
+            'chat': first_msg_row[1],
+            'from_me': first_msg_row[2] == 1,
+            'date': dt_obj.strftime('%Y-%m-%d'),
+            'time': dt_obj.strftime('%H:%M'),
+        }
+        who = "You" if first_message['from_me'] else first_message['chat']
+        print(f"  First: \"{first_message['text'][:50]}\" - {who} - {first_message['date']} {first_message['time']}")
+
+    cursor.execute(f"""
+        SELECT m.ZTEXT, cs.ZPARTNERNAME, m.ZISFROMME,
+               m.ZMESSAGEDATE
+        FROM ZWAMESSAGE m
+        JOIN ZWACHATSESSION cs ON m.ZCHATSESSION = cs.Z_PK
+        WHERE m.ZTEXT IS NOT NULL AND m.ZMESSAGEDATE IS NOT NULL
+          AND cs.ZPARTNERNAME IS NOT NULL {date_filter}
+        ORDER BY m.ZMESSAGEDATE DESC LIMIT 1
+    """)
+    last_msg_row = cursor.fetchone()
+    last_message = None
+    if last_msg_row:
+        dt_obj = apple_timestamp_to_datetime(last_msg_row[3])
+        last_message = {
+            'text': last_msg_row[0][:100],
+            'chat': last_msg_row[1],
+            'from_me': last_msg_row[2] == 1,
+            'date': dt_obj.strftime('%Y-%m-%d'),
+            'time': dt_obj.strftime('%H:%M'),
+        }
+        who = "You" if last_message['from_me'] else last_message['chat']
+        print(f"  Last: \"{last_message['text'][:50]}\" - {who} - {last_message['date']} {last_message['time']}")
+
+    # Longest gap in a chat
+    print("\n🕳️  Longest gap...")
+    cursor.execute(f"""
+        WITH msg_gaps AS (
+            SELECT cs.ZPARTNERNAME,
+                m.ZMESSAGEDATE,
+                LAG(m.ZMESSAGEDATE) OVER (PARTITION BY m.ZCHATSESSION ORDER BY m.ZMESSAGEDATE) as prev_date
+            FROM ZWAMESSAGE m
+            JOIN ZWACHATSESSION cs ON m.ZCHATSESSION = cs.Z_PK
+            WHERE m.ZMESSAGEDATE IS NOT NULL AND cs.ZPARTNERNAME IS NOT NULL
+              AND cs.ZSESSIONTYPE = 0 {date_filter}
+        )
+        SELECT ZPARTNERNAME, MAX(ZMESSAGEDATE - prev_date) as gap_seconds
+        FROM msg_gaps
+        WHERE prev_date IS NOT NULL
+        GROUP BY ZPARTNERNAME
+        ORDER BY gap_seconds DESC
+        LIMIT 1
+    """)
+    gap_row = cursor.fetchone()
+    longest_gap = None
+    if gap_row:
+        gap_days = round(gap_row[1] / 86400, 1)
+        longest_gap = {
+            'chat': gap_row[0],
+            'seconds': gap_row[1],
+            'days': gap_days,
+        }
+        print(f"  {longest_gap['chat']}: {gap_days} days")
+
     # Prepare statistics for JSON output
     stats = {
         "year": year,
@@ -721,7 +882,12 @@ def analyze_whatsapp_db(db_path, year=None):
         "top_messages": [{"text": text, "count": count} for text, count in top_messages],
         "media_counts": media_counts,
         "messages_per_month": [{"month": m, "name": month_names[m - 1] if 1 <= m <= 12 else str(m), "count": c} for m, c in messages_per_month],
-        "response_time": response_time
+        "response_time": response_time,
+        "chat_timelines": chat_timelines,
+        "response_comparison": response_comparison,
+        "first_message": first_message,
+        "last_message": last_message,
+        "longest_gap": longest_gap
     }
 
     conn.close()
@@ -794,6 +960,11 @@ def generate_html_wrapped(stats, output_file):
         media_counts=stats.get('media_counts', []),
         messages_per_month=stats.get('messages_per_month', []),
         response_time=stats.get('response_time'),
+        chat_timelines=stats.get('chat_timelines', {}),
+        response_comparison=stats.get('response_comparison', []),
+        first_message=stats.get('first_message'),
+        last_message=stats.get('last_message'),
+        longest_gap=stats.get('longest_gap'),
         data_json=json.dumps(stats)
     )
 
