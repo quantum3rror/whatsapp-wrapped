@@ -1,15 +1,19 @@
 # WhatsApp Wrapped
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/lukasss123/whatsapp-wrapped)
+
 Generate Spotify Wrapped-style statistics for your WhatsApp conversations!
 
 ## Quick Start
 
 ### Prerequisites
 
-1. **macOS** (Windows/Linux support planned but not tested)
+1. **macOS or Windows** with the Apple Devices app (formerly iTunes)
 2. **Python 3.9+**
 3. **WhatsApp** installed on your iPhone with message history
-4. An **iTunes/Finder backup** of your iPhone
+4. An **iOS backup** of your iPhone (via Finder, iTunes, or Apple Devices app)
 
 ### Installation
 
@@ -39,12 +43,17 @@ python whatsapp_wrapped_mvp.py --year 0
 
 **Manual database path**
 ```bash
-# Use a specific ChatStorage.sqlite file
+# Use a specific ChatStorage.sqlite file (extracted with iMazing, etc.)
 python whatsapp_wrapped_mvp.py --db /path/to/ChatStorage.sqlite
+
+# The file can be named anything - the script detects SQLite databases
+python whatsapp_wrapped_mvp.py --db /path/to/7c7fba66680ef796b916b067077cc246adacf01d
 
 # Custom output file
 python whatsapp_wrapped_mvp.py --db /path/to/ChatStorage.sqlite --output my_stats.json
 ```
+
+> **Note:** In iOS backups, files are renamed to SHA-1 hashes. The actual file is a SQLite database - you can use either the extracted `ChatStorage.sqlite` name or the hashed filename directly from the backup.
 
 The script will:
 1. 🔍 Find your iOS backups automatically (or use provided path)
@@ -52,6 +61,16 @@ The script will:
 3. 📊 Analyze your messages and generate statistics
 4. 💾 Save results to JSON and HTML files
 5. 🎉 **Open the HTML file in your browser** to see your Wrapped!
+
+### Demo
+
+Want to see what it looks like without running it? Check out the [demo output](examples/demo_wrapped.html) in your browser or [view the sample data](examples/demo_stats.json).
+
+![Intro](examples/screenshots/01-intro.png)
+![Stats](examples/screenshots/02-stats.png)
+![Contacts](examples/screenshots/03-contacts.png)
+![Media](examples/screenshots/05-media.png)
+![Full View](examples/screenshots/04-full.png)
 
 ### What You'll Get
 
@@ -88,19 +107,14 @@ The script will:
 
 #### Where Backups are Stored:
 
-**macOS (tested)**
+**macOS**
 ```
 ~/Library/Application Support/MobileSync/Backup/
 ```
 
-**Windows (Apple Devices app - experimental)**
+**Windows (Apple Devices app)**
 ```
-C:\Users\<USER>\Apple\MobileSync\Backup
-```
-
-**Linux (experimental - not tested)**
-```
-~/.config/apple-mobile-sync/Backup
+C:\Users\<YourName>\Apple\MobileSync\Backup
 ```
 
 ### Privacy & Security
@@ -159,6 +173,7 @@ MIT License - feel free to use and modify!
 
 This is an early MVP. Contributions welcome!
 
----
+## Acknowledgments
 
-**Generated with ❤️ for WhatsApp users who want insights into their conversations**
+Inspired by [imessage-wrapped](https://github.com/vuciv/imessage-wrapped) - a project that brings the Wrapped experience to iMessage conversations.
+

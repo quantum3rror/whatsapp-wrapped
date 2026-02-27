@@ -1,0 +1,215 @@
+{
+  "year": 2025,
+  "total_messages": 12453,
+  "sent": 5821,
+  "received": 6632,
+  "total_conversations": 47,
+  "days_in_period": 365,
+  "messages_per_day": 34.1,
+  "date_range": {
+    "start": "2025-01-01",
+    "end": "2025-12-31"
+  },
+  "top_individual_chats": [
+    {"name": "Alex Chen", "count": 1247, "sent": 558, "sent_pct": 44.7},
+    {"name": "Jordan Smith", "count": 892, "sent": 488, "sent_pct": 54.7},
+    {"name": "Sam Wilson", "count": 634, "sent": 273, "sent_pct": 43.1},
+    {"name": "Taylor Brown", "count": 521, "sent": 288, "sent_pct": 55.3},
+    {"name": "Morgan Davis", "count": 445, "sent": 236, "sent_pct": 53.0}
+  ],
+  "top_groups": [
+    {"name": "Squad Group Chat 💬", "count": 1834, "sent": 103, "sent_pct": 5.6},
+    {"name": "Work Team", "count": 956, "sent": 33, "sent_pct": 3.5},
+    {"name": "Family Group 👨‍👩‍👧‍👦", "count": 789, "sent": 206, "sent_pct": 26.1},
+    {"name": "College Friends", "count": 623, "sent": 271, "sent_pct": 43.5},
+    {"name": "Gaming Crew 🎮", "count": 412, "sent": 182, "sent_pct": 44.2}
+  ],
+  "top_hours": [
+    {"hour": 18, "count": 1245},
+    {"hour": 19, "count": 1123},
+    {"hour": 17, "count": 1089},
+    {"hour": 20, "count": 987},
+    {"hour": 12, "count": 876}
+  ],
+  "all_hours": [
+    {"hour": 0, "count": 45}, {"hour": 1, "count": 12}, {"hour": 2, "count": 8},
+    {"hour": 3, "count": 5}, {"hour": 4, "count": 15}, {"hour": 5, "count": 32},
+    {"hour": 6, "count": 123}, {"hour": 7, "count": 289}, {"hour": 8, "count": 456},
+    {"hour": 9, "count": 567}, {"hour": 10, "count": 678}, {"hour": 11, "count": 789},
+    {"hour": 12, "count": 876}, {"hour": 13, "count": 765}, {"hour": 14, "count": 890},
+    {"hour": 15, "count": 923}, {"hour": 16, "count": 1012}, {"hour": 17, "count": 1089},
+    {"hour": 18, "count": 1245}, {"hour": 19, "count": 1123}, {"hour": 20, "count": 987},
+    {"hour": 21, "count": 654}, {"hour": 22, "count": 432}, {"hour": 23, "count": 189}
+  ],
+  "days_of_week": [
+    {"day": "Sunday", "count": 1654},
+    {"day": "Monday", "count": 1823},
+    {"day": "Tuesday", "count": 1892},
+    {"day": "Wednesday", "count": 1765},
+    {"day": "Thursday", "count": 1923},
+    {"day": "Friday", "count": 2101},
+    {"day": "Saturday", "count": 1295}
+  ],
+  "busiest_day": {
+    "date": "2025-09-15",
+    "count": 187
+  },
+  "top_emojis": [
+    {"emoji": "😂", "count": 234},
+    {"emoji": "❤️", "count": 189},
+    {"emoji": "👍", "count": 156},
+    {"emoji": "🔥", "count": 134},
+    {"emoji": "✨", "count": 112},
+    {"emoji": "🎉", "count": 98},
+    {"emoji": "😭", "count": 87},
+    {"emoji": "🥰", "count": 76},
+    {"emoji": "💀", "count": 65},
+    {"emoji": "🤣", "count": 54}
+  ],
+  "top_messages": [
+    {"text": "Haha", "count": 87},
+    {"text": "Yeah", "count": 65},
+    {"text": "Ok", "count": 54},
+    {"text": "Thanks", "count": 43},
+    {"text": "No way", "count": 38},
+    {"text": "Let's go", "count": 32},
+    {"text": "Perfect", "count": 28},
+    {"text": "Awesome", "count": 24},
+    {"text": "I see", "count": 21},
+    {"text": "For real", "count": 19}
+  ],
+  "media_counts": [
+    {"type": "Text", "count": 9856},
+    {"type": "Photos", "count": 1234},
+    {"type": "Stickers", "count": 567},
+    {"type": "Audio", "count": 234},
+    {"type": "Links", "count": 189},
+    {"type": "Videos", "count": 156},
+    {"type": "GIFs", "count": 134},
+    {"type": "Reactions", "count": 98},
+    {"type": "Calls", "count": 45},
+    {"type": "Documents", "count": 23},
+    {"type": "Locations", "count": 12},
+    {"type": "Polls", "count": 5}
+  ],
+  "messages_per_month": [
+    {"month": 1, "name": "Jan", "count": 1023},
+    {"month": 2, "name": "Feb", "count": 892},
+    {"month": 3, "name": "Mar", "count": 945},
+    {"month": 4, "name": "Apr", "count": 1089},
+    {"month": 5, "name": "May", "count": 1234},
+    {"month": 6, "name": "Jun", "count": 876},
+    {"month": 7, "name": "Jul", "count": 765},
+    {"month": 8, "name": "Aug", "count": 654},
+    {"month": 9, "name": "Sep", "count": 1456},
+    {"month": 10, "name": "Oct", "count": 987},
+    {"month": 11, "name": "Nov", "count": 1123},
+    {"month": 12, "name": "Dec", "count": 1409}
+  ],
+  "response_time": {
+    "median_seconds": 245,
+    "average_seconds": 1890,
+    "total_responses": 3245,
+    "under_1min_pct": 35.2,
+    "under_5min_pct": 52.8,
+    "under_1h_pct": 78.9
+  },
+  "chat_timelines": {
+    "top_chat": {
+      "name": "Alex Chen",
+      "months": [
+        {"month": 1, "name": "Jan", "label": "Jan", "count": 145},
+        {"month": 2, "name": "Feb", "label": "Feb", "count": 98},
+        {"month": 3, "name": "Mar", "label": "Mar", "count": 112},
+        {"month": 4, "name": "Apr", "label": "Apr", "count": 134},
+        {"month": 5, "name": "May", "label": "May", "count": 156},
+        {"month": 6, "name": "Jun", "label": "Jun", "count": 87},
+        {"month": 7, "name": "Jul", "label": "Jul", "count": 76},
+        {"month": 8, "name": "Aug", "label": "Aug", "count": 54},
+        {"month": 9, "name": "Sep", "label": "Sep", "count": 167},
+        {"month": 10, "name": "Oct", "label": "Oct", "count": 89},
+        {"month": 11, "name": "Nov", "label": "Nov", "count": 78},
+        {"month": 12, "name": "Dec", "label": "Dec", "count": 51}
+      ],
+      "is_lifetime": false
+    },
+    "top_group": {
+      "name": "Squad Group Chat 💬",
+      "months": [
+        {"month": 1, "name": "Jan", "label": "Jan", "count": 234},
+        {"month": 2, "name": "Feb", "label": "Feb", "count": 189},
+        {"month": 3, "name": "Mar", "label": "Mar", "count": 201},
+        {"month": 4, "name": "Apr", "label": "Apr", "count": 178},
+        {"month": 5, "name": "May", "label": "May", "count": 267},
+        {"month": 6, "name": "Jun", "label": "Jun", "count": 123},
+        {"month": 7, "name": "Jul", "label": "Jul", "count": 98},
+        {"month": 8, "name": "Aug", "label": "Aug", "count": 87},
+        {"month": 9, "name": "Sep", "label": "Sep", "count": 189},
+        {"month": 10, "name": "Oct", "label": "Oct", "count": 67},
+        {"month": 11, "name": "Nov", "label": "Nov", "count": 89},
+        {"month": 12, "name": "Dec", "label": "Dec", "count": 112}
+      ],
+      "is_lifetime": false
+    }
+  },
+  "response_comparison": [
+    {"name": "Alex Chen", "you_median": 45, "them_median": 32, "you_replies": 567, "them_replies": 612},
+    {"name": "Jordan Smith", "you_median": 189, "them_median": 156, "you_replies": 423, "them_replies": 445},
+    {"name": "Sam Wilson", "you_median": 78, "them_median": 34, "you_replies": 289, "them_replies": 312}
+  ],
+  "first_message_sent": {
+    "text": "Happy New Year! 🎉",
+    "chat": "Alex Chen",
+    "from_me": true,
+    "date": "2025-01-01",
+    "time": "00:05",
+    "context": [
+      {"text": "Happy New Year! 🎉", "from_me": true, "time": "00:05"},
+      {"text": "You too!", "from_me": false, "time": "00:12"},
+      {"text": "Ready for 2025?", "from_me": true, "time": "00:15"}
+    ]
+  },
+  "first_message_received": {
+    "text": "Happy New Year!! ✨",
+    "chat": "Jordan Smith",
+    "from_me": false,
+    "date": "2025-01-01",
+    "time": "00:01",
+    "context": [
+      {"text": "Happy New Year!! ✨", "from_me": false, "time": "00:01"},
+      {"text": "Thank you! 🥳", "from_me": true, "time": "00:08"},
+      {"text": "Let's make it great", "from_me": false, "time": "00:10"}
+    ]
+  },
+  "last_message_sent": {
+    "text": "See you next year!",
+    "chat": "Morgan Davis",
+    "from_me": true,
+    "date": "2025-12-31",
+    "time": "23:58",
+    "context": [
+      {"text": "About to leave for the party", "from_me": true, "time": "23:55"},
+      {"text": "Have fun!", "from_me": false, "time": "23:56"},
+      {"text": "See you next year!", "from_me": true, "time": "23:58"}
+    ]
+  },
+  "last_message_received": {
+    "text": "Good night! 🌙",
+    "chat": "Taylor Brown",
+    "from_me": false,
+    "date": "2025-12-31",
+    "time": "23:45",
+    "context": [
+      {"text": "Long day today", "from_me": true, "time": "23:40"},
+      {"text": "Get some rest", "from_me": false, "time": "23:42"},
+      {"text": "Good night! 🌙", "from_me": false, "time": "23:45"}
+    ]
+  },
+  "longest_gap": {
+    "chat": "Old Friend",
+    "seconds": 18144000,
+    "days": 210.0
+  },
+  "personality": "Conversationalist",
+  "description": "You love a good chat! You're most active on weekday evenings and have strong connections with your closest friends."
+}

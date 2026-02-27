@@ -5,7 +5,6 @@ WhatsApp Wrapped MVP - Analyze WhatsApp conversations from iOS backups
 Supported Platforms:
     - macOS (Darwin): ~/Library/Application Support/MobileSync/Backup
     - Windows: ~/Apple/MobileSync/Backup (Apple Devices app, formerly iTunes)
-    - Linux: ~/.config/apple-mobile-sync/Backup
 
 Permission Requirements (macOS):
     Terminal needs Full Disk Access to read iOS backups:
@@ -72,7 +71,6 @@ APPLE_TIMESTAMP_OFFSET = 978307200
 BACKUP_LOCATIONS = {
     'darwin': '~/Library/Application Support/MobileSync/Backup',
     'windows': '~/Apple/MobileSync/Backup',  # Apple Devices app
-    'linux': '~/.config/apple-mobile-sync/Backup'
 }
 
 # Platform detection for Windows-specific timestamp handling
@@ -88,8 +86,6 @@ def get_backup_locations():
     elif system == 'windows':
         # Apple Devices app (formerly iTunes) uses ~/Apple/MobileSync/Backup
         return [Path.home() / "Apple" / "MobileSync" / "Backup"]
-    elif system == 'linux':
-        return [Path.home() / ".config" / "apple-mobile-sync" / "Backup"]
     else:
         return []
 
@@ -121,9 +117,7 @@ def get_platform_fix_instructions():
    python whatsapp_wrapped_mvp.py --db C:\\path\\to\\ChatStorage.sqlite"""
     else:
         return """
-💡 Alternative: Manually extract WhatsApp database
-   Use a tool like iMazing or libimobiletools
-   Then run with --db flag:
+💡 Use --db flag to provide ChatStorage.sqlite manually
    python whatsapp_wrapped_mvp.py --db /path/to/ChatStorage.sqlite"""
 
 def find_ios_backups(verbose=True):
@@ -325,7 +319,7 @@ def _apple_timestamp_to_datetime_windows(apple_timestamp):
         return datetime(1970, 1, 1) + timedelta(seconds=unix_timestamp)
 
 def _apple_timestamp_to_datetime_unix(apple_timestamp):
-    """Unix (macOS/Linux): Use fromtimestamp (fully supported)"""
+    """Unix (macOS): Use fromtimestamp (fully supported)"""
     if apple_timestamp is None:
         return None
     unix_timestamp = apple_timestamp + APPLE_TIMESTAMP_OFFSET
