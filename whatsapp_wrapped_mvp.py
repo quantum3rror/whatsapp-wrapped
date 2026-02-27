@@ -593,6 +593,58 @@ def analyze_whatsapp_db(db_path, year=None):
     else:
         top_messages = []
 
+    # Media types breakdown
+    cursor.execute(f"""
+        SELECT ZMESSAGETYPE, COUNT(*) as cnt
+        FROM ZWAMESSAGE
+        WHERE ZMESSAGEDATE IS NOT NULL {date_filter}
+        GROUP BY ZMESSAGETYPE
+        ORDER BY cnt DESC
+    """)
+    raw_media = cursor.fetchall()
+    media_type_map = {
+        0: 'Text', 1: 'Photos', 2: 'Videos', 3: 'Audio',
+        5: 'Locations', 6: 'Calls', 7: 'Links',
+        8: 'Documents', 10: 'Deleted', 11: 'Stickers',
+        14: 'GIFs', 15: 'Contact Cards'
+    }
+    media_counts = []
+    for mtype, cnt in raw_media:
+        label = media_type_map.get(mtype, f'Other ({mtype})')
+        # Group all unmapped types into 'Other'
+        if mtype not in media_type_map:
+            # Check if 'Other' already exists
+            existing = next((m for m in media_counts if m['type'] == 'Other'), None)
+            if existing:
+                existing['count'] += cnt
+                continue
+            label = 'Other'
+        media_counts.append({'type': label, 'count': cnt})
+    media_counts.sort(key=lambda x: x['count'], reverse=True)
+
+    print("\n📎 Media breakdown:")
+    for m in media_counts[:8]:
+        print(f"  {m['type']}: {m['count']:,}")
+
+    # Messages per month
+    cursor.execute(f"""
+        SELECT
+            CAST(strftime('%m', datetime(ZMESSAGEDATE + 978307200, 'unixepoch')) AS INTEGER) as month,
+            COUNT(*) as count
+        FROM ZWAMESSAGE
+        WHERE ZMESSAGEDATE IS NOT NULL {date_filter}
+        GROUP BY month
+        ORDER BY month ASC
+    """)
+    messages_per_month = cursor.fetchall()
+    month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+    print("\n📅 Messages per month:")
+    for month_num, count in messages_per_month:
+        name = month_names[month_num - 1] if 1 <= month_num <= 12 else str(month_num)
+        print(f"  {name}: {count:,}")
+
     # Prepare statistics for JSON output
     stats = {
         "year": year,
@@ -613,7 +665,9 @@ def analyze_whatsapp_db(db_path, year=None):
         "days_of_week": [{"day": day, "count": count} for day, count in days],
         "busiest_day": {"date": busiest_day_date, "count": busiest_day_count},
         "top_emojis": [{"emoji": emoji, "count": count} for emoji, count in top_emojis],
-        "top_messages": [{"text": text, "count": count} for text, count in top_messages]
+        "top_messages": [{"text": text, "count": count} for text, count in top_messages],
+        "media_counts": media_counts,
+        "messages_per_month": [{"month": m, "name": month_names[m - 1] if 1 <= m <= 12 else str(m), "count": c} for m, c in messages_per_month]
     }
 
     conn.close()
@@ -683,6 +737,8 @@ def generate_html_wrapped(stats, output_file):
         busiest_day=stats.get('busiest_day', {}),
         top_emojis=stats.get('top_emojis', []),
         top_messages=stats.get('top_messages', []),
+        media_counts=stats.get('media_counts', []),
+        messages_per_month=stats.get('messages_per_month', []),
         data_json=json.dumps(stats)
     )
 
