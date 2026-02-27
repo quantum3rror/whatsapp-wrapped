@@ -1418,6 +1418,31 @@
         >
           {{ personality_description }}
         </p>
+        {% if personality_traits %}
+        <div
+          style="
+            margin-top: 2.5rem;
+            padding: 1rem 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            max-width: 600px;
+          "
+        >
+          <p
+            style="
+              font-size: 0.9rem;
+              color: var(--secondary-color);
+              margin-bottom: 0.5rem;
+              opacity: 0.8;
+            "
+          >
+            Also
+          </p>
+          <p style="font-size: 1.1rem; font-weight: 500">
+            {{ personality_traits|join(' • ') }}
+          </p>
+        </div>
+        {% endif %}
       </section>
 
       <!-- Slide: Thank You -->

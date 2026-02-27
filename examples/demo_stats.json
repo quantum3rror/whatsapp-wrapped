@@ -210,6 +210,7 @@
     "seconds": 18144000,
     "days": 210.0
   },
-  "personality": "Conversationalist",
-  "description": "You love a good chat! You're most active on weekday evenings and have strong connections with your closest friends."
+  "personality": "Balanced Chatter",
+  "description": "You maintain a perfect balance between talking and listening.",
+  "traits": ["Sticker Fanatic", "Emoji Enthusiast"]
 }

@@ -1025,6 +1025,7 @@ def generate_html_wrapped(stats, output_file):
         date_range=stats.get('date_range', {}),
         personality=stats.get('personality', 'Chatter'),
         personality_description=stats.get('description', ''),
+        personality_traits=stats.get('traits', []),
         busiest_day=stats.get('busiest_day', {}),
         top_emojis=stats.get('top_emojis', []),
         top_messages=stats.get('top_messages', []),
