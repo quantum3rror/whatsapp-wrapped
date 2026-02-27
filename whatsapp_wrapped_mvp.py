@@ -465,6 +465,7 @@ def analyze_whatsapp_db(db_path, year=None):
     # Messages by day of week
     cursor.execute(f"""
         SELECT
+            CAST(strftime('%w', datetime(ZMESSAGEDATE + 978307200, 'unixepoch')) AS INTEGER) as day_num,
             CASE CAST(strftime('%w', datetime(ZMESSAGEDATE + 978307200, 'unixepoch')) AS INTEGER)
                 WHEN 0 THEN 'Sunday'
                 WHEN 1 THEN 'Monday'
@@ -477,13 +478,13 @@ def analyze_whatsapp_db(db_path, year=None):
             COUNT(*) as count
         FROM ZWAMESSAGE
         WHERE ZMESSAGEDATE IS NOT NULL {date_filter}
-        GROUP BY day_name
-        ORDER BY count DESC
+        GROUP BY day_num
+        ORDER BY day_num ASC
     """)
     days = cursor.fetchall()
 
     print("\n📅 Messages by Day of Week:")
-    for day, count in days:
+    for day_num, day, count in days:
         print(f"  {day}: {count:,} messages")
 
     # Calculate days in analysis period
@@ -645,6 +646,58 @@ def analyze_whatsapp_db(db_path, year=None):
         name = month_names[month_num - 1] if 1 <= month_num <= 12 else str(month_num)
         print(f"  {name}: {count:,}")
 
+    # Personal response time (individual chats only)
+    print("\n⏱️  Calculating response time...")
+    cursor.execute(f"""
+        WITH ordered_msgs AS (
+            SELECT
+                m.ZCHATSESSION,
+                m.ZMESSAGEDATE,
+                m.ZISFROMME,
+                LAG(m.ZMESSAGEDATE) OVER (PARTITION BY m.ZCHATSESSION ORDER BY m.ZMESSAGEDATE) as prev_date,
+                LAG(m.ZISFROMME) OVER (PARTITION BY m.ZCHATSESSION ORDER BY m.ZMESSAGEDATE) as prev_from_me
+            FROM ZWAMESSAGE m
+            JOIN ZWACHATSESSION cs ON m.ZCHATSESSION = cs.Z_PK
+            WHERE m.ZMESSAGEDATE IS NOT NULL
+              AND cs.ZSESSIONTYPE = 0
+              {date_filter}
+        )
+        SELECT
+            (ZMESSAGEDATE - prev_date) as response_seconds
+        FROM ordered_msgs
+        WHERE ZISFROMME = 1 AND prev_from_me = 0
+          AND (ZMESSAGEDATE - prev_date) > 0
+          AND (ZMESSAGEDATE - prev_date) < 86400
+        ORDER BY response_seconds
+    """)
+    response_times = [r[0] for r in cursor.fetchall()]
+
+    if response_times:
+        import statistics
+        avg_response = round(statistics.mean(response_times))
+        median_response = round(statistics.median(response_times))
+        under1 = sum(1 for t in response_times if t < 60)
+        under5 = sum(1 for t in response_times if t < 300)
+        under1h = sum(1 for t in response_times if t < 3600)
+        total_responses = len(response_times)
+
+        response_time = {
+            "median_seconds": median_response,
+            "average_seconds": avg_response,
+            "total_responses": total_responses,
+            "under_1min_pct": round(under1 / total_responses * 100, 1),
+            "under_5min_pct": round(under5 / total_responses * 100, 1),
+            "under_1h_pct": round(under1h / total_responses * 100, 1),
+        }
+        print(f"  Median response time: {median_response}s ({median_response // 60}m {median_response % 60}s)")
+        print(f"  Average response time: {avg_response}s ({avg_response // 60}m {avg_response % 60}s)")
+        print(f"  Under 1 min: {response_time['under_1min_pct']}%")
+        print(f"  Under 5 min: {response_time['under_5min_pct']}%")
+        print(f"  Under 1 hour: {response_time['under_1h_pct']}%")
+    else:
+        response_time = None
+        print("  No response time data available")
+
     # Prepare statistics for JSON output
     stats = {
         "year": year,
@@ -662,12 +715,13 @@ def analyze_whatsapp_db(db_path, year=None):
         "top_groups": [{"name": name, "count": count, "sent": sent_c, "sent_pct": round(sent_c / count * 100, 1) if count > 0 else 0} for name, count, sent_c in top_groups],
         "top_hours": [{"hour": hour, "count": count} for hour, count in top_hours],
         "all_hours": [{"hour": hour, "count": count} for hour, count in all_hours],
-        "days_of_week": [{"day": day, "count": count} for day, count in days],
+        "days_of_week": [{"day": day, "count": count} for day_num, day, count in days],
         "busiest_day": {"date": busiest_day_date, "count": busiest_day_count},
         "top_emojis": [{"emoji": emoji, "count": count} for emoji, count in top_emojis],
         "top_messages": [{"text": text, "count": count} for text, count in top_messages],
         "media_counts": media_counts,
-        "messages_per_month": [{"month": m, "name": month_names[m - 1] if 1 <= m <= 12 else str(m), "count": c} for m, c in messages_per_month]
+        "messages_per_month": [{"month": m, "name": month_names[m - 1] if 1 <= m <= 12 else str(m), "count": c} for m, c in messages_per_month],
+        "response_time": response_time
     }
 
     conn.close()
@@ -739,6 +793,7 @@ def generate_html_wrapped(stats, output_file):
         top_messages=stats.get('top_messages', []),
         media_counts=stats.get('media_counts', []),
         messages_per_month=stats.get('messages_per_month', []),
+        response_time=stats.get('response_time'),
         data_json=json.dumps(stats)
     )
 

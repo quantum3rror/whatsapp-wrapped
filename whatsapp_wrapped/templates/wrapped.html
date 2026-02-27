@@ -941,6 +941,56 @@
         </div>
       </section>
 
+      <!-- Slide: Response Time -->
+      {% if response_time %}
+      <section class="slide" data-section="Activity">
+        <p style="color: var(--secondary-color); font-size: 1.5rem">
+          Your typical response time
+        </p>
+        <div class="stat-big" style="font-size: clamp(3rem, 10vw, 7rem)">
+          {% if response_time.median_seconds < 60 %} {{
+          response_time.median_seconds }}s {% elif response_time.median_seconds
+          < 3600 %} {{ (response_time.median_seconds // 60) }}m {{
+          (response_time.median_seconds % 60) }}s {% else %} {{
+          (response_time.median_seconds // 3600) }}h {{
+          ((response_time.median_seconds % 3600) // 60) }}m {% endif %}
+        </div>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1rem;
+            margin-top: 0.5rem;
+          "
+        >
+          median response time
+        </p>
+        <div class="stat-row" style="margin-top: 2rem">
+          <div class="stat-item">
+            <p>&lt; 1 min</p>
+            <p>{{ response_time.under_1min_pct }}%</p>
+          </div>
+          <div class="stat-item">
+            <p>&lt; 5 min</p>
+            <p>{{ response_time.under_5min_pct }}%</p>
+          </div>
+          <div class="stat-item">
+            <p>&lt; 1 hour</p>
+            <p>{{ response_time.under_1h_pct }}%</p>
+          </div>
+        </div>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 0.85rem;
+            margin-top: 1.5rem;
+          "
+        >
+          Based on {{ '{:,}'.format(response_time.total_responses) }} responses
+          in individual chats
+        </p>
+      </section>
+      {% endif %}
+
       <!-- SECTION: Profile -->
       <!-- Slide: Conversation Stats -->
       <section class="slide" data-section="Profile">
@@ -1433,7 +1483,7 @@
         });
       }
 
-      // Create daily chart
+      // Create daily chart (chronological, Mon-Sun, with intensity gradient)
       function createDailyChart(canvas) {
         if (
           !wrappedData.days_of_week ||
@@ -1444,20 +1494,46 @@
           return;
         }
 
-        const days = wrappedData.days_of_week.map((d) => d.day.substring(0, 3));
-        const counts = wrappedData.days_of_week.map((d) => d.count);
+        // Sort chronologically: Mon, Tue, Wed, Thu, Fri, Sat, Sun
+        const dayOrder = [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+          "Sunday",
+        ];
+        const dayMap = {};
+        wrappedData.days_of_week.forEach((d) => (dayMap[d.day] = d.count));
+
+        const labels = [];
+        const counts = [];
+        const colors = [];
+        let maxCount = 0;
+        for (const day of dayOrder) {
+          labels.push(day.substring(0, 3));
+          const c = dayMap[day] || 0;
+          counts.push(c);
+          if (c > maxCount) maxCount = c;
+        }
+        for (let i = 0; i < counts.length; i++) {
+          const intensity = maxCount > 0 ? counts[i] / maxCount : 0;
+          const alpha = 0.2 + intensity * 0.7;
+          colors.push(`rgba(37, 211, 102, ${alpha})`);
+        }
 
         new Chart(canvas, {
           type: "bar",
           data: {
-            labels: days,
+            labels: labels,
             datasets: [
               {
                 label: "Messages",
                 data: counts,
-                backgroundColor: "rgba(37, 211, 102, 0.8)",
+                backgroundColor: colors,
                 borderColor: "rgba(37, 211, 102, 1)",
-                borderWidth: 2,
+                borderWidth: 1,
                 borderRadius: 8,
               },
             ],
