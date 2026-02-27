@@ -26,31 +26,31 @@ pip install -r requirements.txt
 
 **List all iOS backups**
 ```bash
-python whatsapp_wrapped_mvp.py --list-backups
+python whatsapp_wrapped.py --list-backups
 ```
 
 **Automatic discovery (requires permissions)**
 ```bash
 # Analyze 2025 (default year)
-python whatsapp_wrapped_mvp.py
+python whatsapp_wrapped.py
 
 # Analyze a different year
-python whatsapp_wrapped_mvp.py --year 2024
+python whatsapp_wrapped.py --year 2024
 
 # Analyze all years
-python whatsapp_wrapped_mvp.py --year 0
+python whatsapp_wrapped.py --year 0
 ```
 
 **Manual database path**
 ```bash
 # Use a specific ChatStorage.sqlite file (extracted with iMazing, etc.)
-python whatsapp_wrapped_mvp.py --db /path/to/ChatStorage.sqlite
+python whatsapp_wrapped.py --db /path/to/ChatStorage.sqlite
 
 # The file can be named anything - the script detects SQLite databases
-python whatsapp_wrapped_mvp.py --db /path/to/7c7fba66680ef796b916b067077cc246adacf01d
+python whatsapp_wrapped.py --db /path/to/7c7fba66680ef796b916b067077cc246adacf01d
 
 # Custom output file
-python whatsapp_wrapped_mvp.py --db /path/to/ChatStorage.sqlite --output my_stats.json
+python whatsapp_wrapped.py --db /path/to/ChatStorage.sqlite --output my_stats.json
 ```
 
 > **Note:** In iOS backups, files are renamed to SHA-1 hashes. The actual file is a SQLite database - you can use either the extracted `ChatStorage.sqlite` name or the hashed filename directly from the backup.
@@ -101,9 +101,9 @@ Want to see what it looks like without running it? Check out the [demo output](e
 2. Open **Finder** (macOS Catalina+) or **iTunes** (older macOS)
 3. Select your iPhone
 4. Click **"Back Up Now"**
-5. **Important**: For this MVP, use an **unencrypted backup**
+5. **Important**: Use an **unencrypted backup**
    - Uncheck "Encrypt local backup" if prompted
-   - (Encrypted backup support coming in full version)
+   - (Encrypted backup support coming in future version)
 
 #### Where Backups are Stored:
 
@@ -126,8 +126,8 @@ C:\Users\<YourName>\Apple\MobileSync\Backup
 
 ## Roadmap
 
-- [x] MVP: Basic iOS analysis with core metrics
-- [ ] HTML visualization (Wrapped-style slides)
+- [x] Basic iOS analysis with core metrics
+- [x] HTML visualization (Wrapped-style slides)
 - [ ] Encrypted iOS backup support
 - [ ] Android support (msgstore.db)
 - [ ] Media analytics (photos, videos, voice notes)
@@ -154,7 +154,7 @@ C:\Users\<YourName>\Apple\MobileSync\Backup
 
 ### iOS Database Structure
 
-WhatsApp on iOS uses a SQLite database called `ChatStorage.sqlite` stored in the app's shared container. The MVP analyzes:
+WhatsApp on iOS uses a SQLite database called `ChatStorage.sqlite` stored in the app's shared container. This tool analyzes:
 
 - **ZWAMESSAGE** table - all messages
 - **ZWACHATSESSION** table - conversations and contacts
@@ -162,8 +162,7 @@ WhatsApp on iOS uses a SQLite database called `ChatStorage.sqlite` stored in the
 
 ### Dependencies
 
-- Standard library only for MVP! (sqlite3, pathlib, json, etc.)
-- Full version will use: pandas, jinja2, rich, etc.
+- Standard library only! (sqlite3, pathlib, json, etc.)
 
 ## License
 
@@ -171,7 +170,7 @@ MIT License - feel free to use and modify!
 
 ## Contributing
 
-This is an early MVP. Contributions welcome!
+This is an open source project. Contributions welcome!
 
 ## Acknowledgments
 

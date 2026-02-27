@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-WhatsApp Wrapped MVP - Analyze WhatsApp conversations from iOS backups
+WhatsApp Wrapped - Analyze WhatsApp conversations from iOS backups
 
 Supported Platforms:
     - macOS (Darwin): ~/Library/Application Support/MobileSync/Backup
@@ -13,9 +13,10 @@ Permission Requirements (macOS):
     3. Restart terminal and try again
 
 Usage Examples:
-    python whatsapp_wrapped_mvp.py --list-backups              # List all backups
-    python whatsapp_wrapped_mvp.py --year 2025                 # Analyze 2025
-    python whatsapp_wrapped_mvp.py --db /path/to/ChatStorage.sqlite  # Use specific DB
+    python whatsapp_wrapped.py --list-backups              # List all backups
+    python whatsapp_wrapped.py --year 2025                 # Analyze 2025 (quiet mode)
+    python whatsapp_wrapped.py --verbose                   # Show detailed progress
+    python whatsapp_wrapped.py --db /path/to/ChatStorage.sqlite  # Use specific DB
 """
 
 import sqlite3
@@ -76,6 +77,16 @@ BACKUP_LOCATIONS = {
 # Platform detection for Windows-specific timestamp handling
 _IS_WINDOWS = platform.system() == 'Windows'
 
+# Verbose mode flag (set by main())
+verbose = False
+
+
+def log(message, verbose_only=True):
+    """Print message only if in verbose mode or if verbose_only=False"""
+    global verbose
+    if verbose or not verbose_only:
+        print(message)
+
 def get_backup_locations():
     """Get iOS backup locations for the current platform"""
     system = platform.system().lower()
@@ -103,7 +114,7 @@ def get_platform_fix_instructions():
 💡 Alternative: Manually extract WhatsApp database
    Use a tool like iMazing, 3uTools, or iPhone Backup Extractor
    Then run with --db flag:
-   python whatsapp_wrapped_mvp.py --db /path/to/ChatStorage.sqlite"""
+   python whatsapp_wrapped.py --db /path/to/ChatStorage.sqlite"""
     elif system == 'windows':
         return """
 💡 To fix this on Windows:
@@ -114,11 +125,11 @@ def get_platform_fix_instructions():
 💡 Alternative: Manually extract WhatsApp database
    Use a tool like iMazing or 3uTools
    Then run with --db flag:
-   python whatsapp_wrapped_mvp.py --db C:\\path\\to\\ChatStorage.sqlite"""
+   python whatsapp_wrapped.py --db C:\\path\\to\\ChatStorage.sqlite"""
     else:
         return """
 💡 Use --db flag to provide ChatStorage.sqlite manually
-   python whatsapp_wrapped_mvp.py --db /path/to/ChatStorage.sqlite"""
+   python whatsapp_wrapped.py --db /path/to/ChatStorage.sqlite"""
 
 def find_ios_backups(verbose=True):
     """Find iOS backups and return metadata (path, device name, date, last modified)"""
@@ -354,17 +365,17 @@ def analyze_whatsapp_db(db_path, year=None):
     if year and year > 0:
         start_ts, end_ts = get_year_timestamp_bounds(year)
         date_filter = f"AND ZMESSAGEDATE >= {start_ts} AND ZMESSAGEDATE <= {end_ts}"
-        print(f"🗓️  Filtering for year: {year}\n")
+        log(f"🗓️  Filtering for year: {year}\n", verbose_only=True)
     else:
         date_filter = ""
         year = None  # Ensure None for "all years"
 
-    print("📊 Analyzing WhatsApp database...\n")
+    log("📊 Analyzing WhatsApp database...\n", verbose_only=True)
 
     # Get total message count
     cursor.execute(f"SELECT COUNT(*) FROM ZWAMESSAGE WHERE ZMESSAGEDATE IS NOT NULL {date_filter}")
     total_messages = cursor.fetchone()[0]
-    print(f"✓ Total messages: {total_messages:,}")
+    log(f"✓ Total messages: {total_messages:,}", verbose_only=True)
 
     # Get date range
     cursor.execute("""
@@ -375,7 +386,7 @@ def analyze_whatsapp_db(db_path, year=None):
     min_date, max_date = cursor.fetchone()
     min_dt = apple_timestamp_to_datetime(min_date)
     max_dt = apple_timestamp_to_datetime(max_date)
-    print(f"✓ Date range: {min_dt.date() if min_dt else 'N/A'} to {max_dt.date() if max_dt else 'N/A'}")
+    log(f"✓ Date range: {min_dt.date() if min_dt else 'N/A'} to {max_dt.date() if max_dt else 'N/A'}", verbose_only=True)
 
     # Sent vs received
     cursor.execute(f"""
@@ -387,12 +398,12 @@ def analyze_whatsapp_db(db_path, year=None):
     sent_received = dict(cursor.fetchall())
     received = sent_received.get(0, 0)
     sent = sent_received.get(1, 0)
-    print(f"✓ Sent: {sent:,} | Received: {received:,}")
+    log(f"✓ Sent: {sent:,} | Received: {received:,}", verbose_only=True)
 
     # Total conversations
     cursor.execute(f"SELECT COUNT(DISTINCT ZCHATSESSION) FROM ZWAMESSAGE WHERE ZMESSAGEDATE IS NOT NULL {date_filter}")
     total_chats = cursor.fetchone()[0]
-    print(f"✓ Total conversations: {total_chats}")
+    log(f"✓ Total conversations: {total_chats}", verbose_only=True)
 
     # Top individual chats (ZSESSIONTYPE = 0 for private/individual)
     cursor.execute(f"""
@@ -412,10 +423,10 @@ def analyze_whatsapp_db(db_path, year=None):
     """)
     top_individual_chats = cursor.fetchall()
 
-    print("\n🏆 Top 10 Individual Chats:")
+    log("\n🏆 Top 10 Individual Chats:", verbose_only=True)
     for i, (name, count, sent_c) in enumerate(top_individual_chats, 1):
         pct = round(sent_c / count * 100, 1) if count > 0 else 0
-        print(f"  {i}. {name}: {count:,} messages ({pct}% sent)")
+        log(f"  {i}. {name}: {count:,} messages ({pct}% sent)", verbose_only=True)
 
     # Top group chats (ZSESSIONTYPE = 1 for groups)
     cursor.execute(f"""
@@ -435,10 +446,10 @@ def analyze_whatsapp_db(db_path, year=None):
     """)
     top_groups = cursor.fetchall()
 
-    print("\n👥 Top 10 Group Chats:")
+    log("\n👥 Top 10 Group Chats:", verbose_only=True)
     for i, (name, count, sent_c) in enumerate(top_groups, 1):
         pct = round(sent_c / count * 100, 1) if count > 0 else 0
-        print(f"  {i}. {name}: {count:,} messages ({pct}% sent)")
+        log(f"  {i}. {name}: {count:,} messages ({pct}% sent)", verbose_only=True)
 
     # Messages by hour (all 24 hours)
     cursor.execute(f"""
@@ -455,9 +466,9 @@ def analyze_whatsapp_db(db_path, year=None):
     # Also keep top 5 for backward compat
     top_hours = sorted(all_hours, key=lambda x: x[1], reverse=True)[:5]
 
-    print("\n⏰ Top 5 Messaging Hours:")
+    log("\n⏰ Top 5 Messaging Hours:", verbose_only=True)
     for hour, count in top_hours:
-        print(f"  {hour:02d}:00 - {count:,} messages")
+        log(f"  {hour:02d}:00 - {count:,} messages", verbose_only=True)
 
     # Messages by day of week
     cursor.execute(f"""
@@ -480,9 +491,9 @@ def analyze_whatsapp_db(db_path, year=None):
     """)
     days = cursor.fetchall()
 
-    print("\n📅 Messages by Day of Week:")
+    log("\n📅 Messages by Day of Week:", verbose_only=True)
     for day_num, day, count in days:
-        print(f"  {day}: {count:,} messages")
+        log(f"  {day}: {count:,} messages", verbose_only=True)
 
     # Calculate days in analysis period
     if year and year > 0:
@@ -495,7 +506,7 @@ def analyze_whatsapp_db(db_path, year=None):
         days_in_period = 365
 
     messages_per_day = round(total_messages / days_in_period, 1)
-    print(f"✓ Messages per day: {messages_per_day}")
+    log(f"✓ Messages per day: {messages_per_day}", verbose_only=True)
 
     # Busiest single day
     cursor.execute(f"""
@@ -511,12 +522,12 @@ def analyze_whatsapp_db(db_path, year=None):
     busiest_day_row = cursor.fetchone()
     if busiest_day_row:
         busiest_day_date, busiest_day_count = busiest_day_row
-        print(f"\n🔥 Busiest day: {busiest_day_date} with {busiest_day_count:,} messages")
+        log(f"\n🔥 Busiest day: {busiest_day_date} with {busiest_day_count:,} messages", verbose_only=True)
     else:
         busiest_day_date, busiest_day_count = None, 0
 
     # Top emojis from sent messages
-    print("\n😂 Analyzing emojis...")
+    log("\n😂 Analyzing emojis...", verbose_only=True)
     cursor.execute(f"""
         SELECT ZTEXT
         FROM ZWAMESSAGE
@@ -563,11 +574,11 @@ def analyze_whatsapp_db(db_path, year=None):
 
     top_emojis = emoji_counter.most_common(10)
     if top_emojis:
-        print("🏆 Top 10 Emojis (sent by you):")
+        log("🏆 Top 10 Emojis (sent by you):", verbose_only=True)
         for i, (emoji, count) in enumerate(top_emojis, 1):
-            print(f"  {i}. {emoji} - {count:,} times")
+            log(f"  {i}. {emoji} - {count:,} times", verbose_only=True)
     else:
-        print("  No emojis found")
+        log("  No emojis found", verbose_only=True)
 
     # Most frequently sent message
     cursor.execute(f"""
@@ -584,10 +595,10 @@ def analyze_whatsapp_db(db_path, year=None):
     """)
     top_messages = cursor.fetchall()
     if top_messages:
-        print("\n💬 Most sent messages:")
+        log("\n💬 Most sent messages:", verbose_only=True)
         for i, (text, count) in enumerate(top_messages, 1):
             display = text[:50] + ('...' if len(text) > 50 else '')
-            print(f"  {i}. \"{display}\" - {count:,} times")
+            log(f"  {i}. \"{display}\" - {count:,} times", verbose_only=True)
     else:
         top_messages = []
 
@@ -621,9 +632,9 @@ def analyze_whatsapp_db(db_path, year=None):
         media_counts.append({'type': label, 'count': cnt})
     media_counts.sort(key=lambda x: x['count'], reverse=True)
 
-    print("\n📎 Media breakdown:")
+    log("\n📎 Media breakdown:", verbose_only=True)
     for m in media_counts[:8]:
-        print(f"  {m['type']}: {m['count']:,}")
+        log(f"  {m['type']}: {m['count']:,}", verbose_only=True)
 
     # Messages per month
     cursor.execute(f"""
@@ -639,13 +650,13 @@ def analyze_whatsapp_db(db_path, year=None):
     month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-    print("\n📅 Messages per month:")
+    log("\n📅 Messages per month:", verbose_only=True)
     for month_num, count in messages_per_month:
         name = month_names[month_num - 1] if 1 <= month_num <= 12 else str(month_num)
-        print(f"  {name}: {count:,}")
+        log(f"  {name}: {count:,}", verbose_only=True)
 
     # Personal response time (individual chats only)
-    print("\n⏱️  Calculating response time...")
+    log("\n⏱️  Calculating response time...", verbose_only=True)
     cursor.execute(f"""
         WITH ordered_msgs AS (
             SELECT
@@ -687,17 +698,17 @@ def analyze_whatsapp_db(db_path, year=None):
             "under_5min_pct": round(under5 / total_responses * 100, 1),
             "under_1h_pct": round(under1h / total_responses * 100, 1),
         }
-        print(f"  Median response time: {median_response}s ({median_response // 60}m {median_response % 60}s)")
-        print(f"  Average response time: {avg_response}s ({avg_response // 60}m {avg_response % 60}s)")
-        print(f"  Under 1 min: {response_time['under_1min_pct']}%")
-        print(f"  Under 5 min: {response_time['under_5min_pct']}%")
-        print(f"  Under 1 hour: {response_time['under_1h_pct']}%")
+        log(f"  Median response time: {median_response}s ({median_response // 60}m {median_response % 60}s)", verbose_only=True)
+        log(f"  Average response time: {avg_response}s ({avg_response // 60}m {avg_response % 60}s)", verbose_only=True)
+        log(f"  Under 1 min: {response_time['under_1min_pct']}%", verbose_only=True)
+        log(f"  Under 5 min: {response_time['under_5min_pct']}%", verbose_only=True)
+        log(f"  Under 1 hour: {response_time['under_1h_pct']}%", verbose_only=True)
     else:
         response_time = None
-        print("  No response time data available")
+        log("  No response time data available", verbose_only=True)
 
     # Chat timeline for top 1 person and top 1 group (messages per month)
-    print("\n📈 Chat timelines...")
+    log("\n📈 Chat timelines...", verbose_only=True)
     chat_timelines = {}
     is_lifetime = not (year and year > 0)
 
@@ -740,7 +751,7 @@ def analyze_whatsapp_db(db_path, year=None):
             'months': months_data,
             'is_lifetime': is_lifetime
         }
-        print(f"  {top1_name}: {sum(x['count'] for x in months_data):,} msgs over {len(months_data)} months")
+        log(f"  {top1_name}: {sum(x['count'] for x in months_data):,} msgs over {len(months_data)} months", verbose_only=True)
 
     if top_groups:
         top1_group = top_groups[0][0]
@@ -757,10 +768,10 @@ def analyze_whatsapp_db(db_path, year=None):
             'months': months_data,
             'is_lifetime': is_lifetime
         }
-        print(f"  {top1_group}: {sum(x['count'] for x in months_data):,} msgs over {len(months_data)} months")
+        log(f"  {top1_group}: {sum(x['count'] for x in months_data):,} msgs over {len(months_data)} months", verbose_only=True)
 
     # Response time comparison for top 3 individual chats
-    print("\n⚡ Response time comparison...")
+    log("\n⚡ Response time comparison...", verbose_only=True)
     response_comparison = []
     if top_individual_chats:
         top3_names = [c[0] for c in top_individual_chats[:3]]
@@ -798,12 +809,12 @@ def analyze_whatsapp_db(db_path, year=None):
                     'them_replies': len(them_times),
                 }
                 response_comparison.append(entry)
-                print(f"  {chat_name}: You {you_med}s vs Them {them_med}s")
+                log(f"  {chat_name}: You {you_med}s vs Them {them_med}s", verbose_only=True)
             else:
-                print(f"  {chat_name}: Skipped (you_replies={len(you_times)}, them_replies={len(them_times)})")
+                log(f"  {chat_name}: Skipped (you_replies={len(you_times)}, them_replies={len(them_times)})", verbose_only=True)
 
     # First and last message of the year (with context messages)
-    print("\n✉️  First & last message...")
+    log("\n✉️  First & last message...", verbose_only=True)
 
     def fetch_message_with_context(cursor, date_filter, order, from_me_filter=None, context_count=3):
         """Fetch the first/last message and surrounding context from the same chat.
@@ -875,20 +886,20 @@ def analyze_whatsapp_db(db_path, year=None):
     first_message_sent = fetch_message_with_context(cursor, date_filter, 'ASC', from_me_filter=1)
     first_message_received = fetch_message_with_context(cursor, date_filter, 'ASC', from_me_filter=0)
     if first_message_sent:
-        print(f"  First sent: \"{first_message_sent['text'][:50]}\" → {first_message_sent['chat']} - {first_message_sent['date']} {first_message_sent['time']}")
+        log(f"  First sent: \"{first_message_sent['text'][:50]}\" → {first_message_sent['chat']} - {first_message_sent['date']} {first_message_sent['time']}", verbose_only=True)
     if first_message_received:
-        print(f"  First received: \"{first_message_received['text'][:50]}\" ← {first_message_received['chat']} - {first_message_received['date']} {first_message_received['time']}")
+        log(f"  First received: \"{first_message_received['text'][:50]}\" ← {first_message_received['chat']} - {first_message_received['date']} {first_message_received['time']}", verbose_only=True)
 
     # Fetch last sent and last received
     last_message_sent = fetch_message_with_context(cursor, date_filter, 'DESC', from_me_filter=1)
     last_message_received = fetch_message_with_context(cursor, date_filter, 'DESC', from_me_filter=0)
     if last_message_sent:
-        print(f"  Last sent: \"{last_message_sent['text'][:50]}\" → {last_message_sent['chat']} - {last_message_sent['date']} {last_message_sent['time']}")
+        log(f"  Last sent: \"{last_message_sent['text'][:50]}\" → {last_message_sent['chat']} - {last_message_sent['date']} {last_message_sent['time']}", verbose_only=True)
     if last_message_received:
-        print(f"  Last received: \"{last_message_received['text'][:50]}\" ← {last_message_received['chat']} - {last_message_received['date']} {last_message_received['time']}")
+        log(f"  Last received: \"{last_message_received['text'][:50]}\" ← {last_message_received['chat']} - {last_message_received['date']} {last_message_received['time']}", verbose_only=True)
 
     # Longest gap in a chat
-    print("\n🕳️  Longest gap...")
+    log("\n🕳️  Longest gap...", verbose_only=True)
     cursor.execute(f"""
         WITH msg_gaps AS (
             SELECT cs.ZPARTNERNAME,
@@ -915,7 +926,7 @@ def analyze_whatsapp_db(db_path, year=None):
             'seconds': gap_row[1],
             'days': gap_days,
         }
-        print(f"  {longest_gap['chat']}: {gap_days} days")
+        log(f"  {longest_gap['chat']}: {gap_days} days", verbose_only=True)
 
     # Prepare statistics for JSON output
     stats = {
@@ -973,8 +984,8 @@ def generate_html_wrapped(stats, output_file):
     template_path = current_dir / 'whatsapp_wrapped' / 'templates' / 'wrapped.html'
 
     if not template_path.exists():
-        print(f"⚠️  Template not found at {template_path}")
-        print("   HTML generation skipped.")
+        log(f"⚠️  Template not found at {template_path}", verbose_only=False)
+        log("   HTML generation skipped.", verbose_only=False)
         return
 
     with open(template_path, 'r', encoding='utf-8') as f:
@@ -1036,22 +1047,27 @@ def generate_html_wrapped(stats, output_file):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='WhatsApp Wrapped MVP - Analyze your WhatsApp conversations',
+        description='WhatsApp Wrapped - Analyze your WhatsApp conversations',
         epilog='Examples:\n'
-               '  python whatsapp_wrapped_mvp.py --list-backups\n'
-               '  python whatsapp_wrapped_mvp.py --year 2025\n'
-               '  python whatsapp_wrapped_mvp.py --db /path/to/ChatStorage.sqlite',
+               '  python whatsapp_wrapped.py --list-backups\n'
+               '  python whatsapp_wrapped.py --year 2025\n'
+               '  python whatsapp_wrapped.py --db /path/to/ChatStorage.sqlite',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument('--db', type=str, help='Path to ChatStorage.sqlite file (if already extracted)')
     parser.add_argument('--output', type=str, default='whatsapp_wrapped_stats.json', help='Output JSON file')
     parser.add_argument('--year', type=int, default=2025, help='Year to analyze (default: 2025, use 0 for all years)')
     parser.add_argument('--list-backups', action='store_true', help='List all discovered iOS backups')
+    parser.add_argument('--verbose', '-v', action='store_true', help='Show detailed progress and statistics')
     args = parser.parse_args()
 
-    print("🎉 WhatsApp Wrapped MVP")
-    print(f"Platform: {platform.system()} {platform.release()}\n")
-    print("=" * 50)
+    # Set global verbose flag
+    global verbose
+    verbose = args.verbose
+
+    log("🎉 WhatsApp Wrapped", verbose_only=False)
+    log(f"Platform: {platform.system()} {platform.release()}\n", verbose_only=True)
+    log("=" * 50, verbose_only=True)
 
     # Handle --list-backups flag
     if args.list_backups:
@@ -1062,81 +1078,81 @@ def main():
     if args.db:
         db_path = Path(args.db)
         if not db_path.exists():
-            print(f"❌ Database file not found: {db_path}")
+            log(f"❌ Database file not found: {db_path}", verbose_only=False)
             return
-        print(f"✓ Using provided database: {db_path}")
+        log(f"✓ Using provided database: {db_path}", verbose_only=False)
         try:
-            print(f"✓ Size: {db_path.stat().st_size / 1024 / 1024:.1f} MB")
+            log(f"✓ Size: {db_path.stat().st_size / 1024 / 1024:.1f} MB", verbose_only=True)
         except Exception:
             pass
     else:
         # Find iOS backups
-        print("\n[1/3] Finding iOS backups...")
+        log("\n[1/3] Finding iOS backups...", verbose_only=True)
         backups = find_ios_backups(verbose=False)
 
         if not backups:
-            print("\n❌ No iOS backups found.")
+            log("\n❌ No iOS backups found.", verbose_only=False)
             system = platform.system().lower()
-            print(f"\nExpected location on {system.title()}:")
+            log(f"\nExpected location on {system.title()}:", verbose_only=False)
             for loc in get_backup_locations():
-                print(f"  {loc.expanduser()}")
-            print(get_platform_fix_instructions())
-            print("\n💡 You can also manually provide the database:")
-            print(f"   python {sys.argv[0]} --db /path/to/ChatStorage.sqlite")
-            print(f"\n💡 Or use --list-backups to see all available backups:")
-            print(f"   python {sys.argv[0]} --list-backups")
+                log(f"  {loc.expanduser()}", verbose_only=False)
+            log(get_platform_fix_instructions(), verbose_only=False)
+            log("\n💡 You can also manually provide the database:", verbose_only=False)
+            log(f"   python {sys.argv[0]} --db /path/to/ChatStorage.sqlite", verbose_only=False)
+            log(f"\n💡 Or use --list-backups to see all available backups:", verbose_only=False)
+            log(f"   python {sys.argv[0]} --list-backups", verbose_only=False)
             return
 
-        print(f"✓ Found {len(backups)} backup(s)")
+        log(f"✓ Found {len(backups)} backup(s)", verbose_only=True)
 
         # Use the most recent backup
         backup = backups[0]
         backup_path = backup['path']
-        print(f"✓ Using backup: {backup['device_name']} ({backup['id'][:8]}...)")
+        log(f"✓ Using backup: {backup['device_name']} ({backup['id'][:8]}...)", verbose_only=True)
         if backup['backup_date']:
             date_str = backup['backup_date'].strftime('%Y-%m-%d %H:%M')
-            print(f"  Date: {date_str}")
+            log(f"  Date: {date_str}", verbose_only=True)
 
         # Find WhatsApp database
-        print("\n[2/3] Looking for WhatsApp database...")
-        db_path, description = find_whatsapp_db(backup_path)
+        log("\n[2/3] Looking for WhatsApp database...", verbose_only=True)
+        db_path, description = find_whatsapp_db(backup_path, verbose=verbose)
 
         if not db_path:
-            print("\n❌ WhatsApp database not found in backup.")
-            print("💡 Possible reasons:")
-            print("   - WhatsApp is not installed on the device")
-            print("   - No messages have been sent/received yet")
-            print("   - This is an incomplete backup")
-            print(f"\n💡 Or provide the database manually:")
-            print(f"   python {sys.argv[0]} --db /path/to/ChatStorage.sqlite")
-            print(f"\n💡 To extract manually, use tools like:")
-            print("   - iMazing (cross-platform)")
-            print("   - 3uTools (Windows)")
-            print("   - iPhone Backup Extractor")
+            log("\n❌ WhatsApp database not found in backup.", verbose_only=False)
+            log("💡 Possible reasons:", verbose_only=False)
+            log("   - WhatsApp is not installed on the device", verbose_only=False)
+            log("   - No messages have been sent/received yet", verbose_only=False)
+            log("   - This is an incomplete backup", verbose_only=False)
+            log(f"\n💡 Or provide the database manually:", verbose_only=False)
+            log(f"   python {sys.argv[0]} --db /path/to/ChatStorage.sqlite", verbose_only=False)
+            log(f"\n💡 To extract manually, use tools like:", verbose_only=False)
+            log("   - iMazing (cross-platform)", verbose_only=False)
+            log("   - 3uTools (Windows)", verbose_only=False)
+            log("   - iPhone Backup Extractor", verbose_only=False)
             return
 
         try:
             size_mb = db_path.stat().st_size / 1024 / 1024
-            print(f"✓ Found ChatStorage.sqlite ({size_mb:.1f} MB)")
+            log(f"✓ Found ChatStorage.sqlite ({size_mb:.1f} MB)", verbose_only=True)
             if description:
-                print(f"  Method: {description}")
+                log(f"  Method: {description}", verbose_only=True)
         except Exception as e:
-            print(f"✓ Found ChatStorage.sqlite (error reading size: {e})")
+            log(f"✓ Found ChatStorage.sqlite (error reading size: {e})", verbose_only=True)
 
     # Analyze database
-    print("\n[3/3] Analyzing your WhatsApp data...")
-    print("=" * 50)
+    log("\n[3/3] Analyzing your WhatsApp data...", verbose_only=False)
+    log("=" * 50, verbose_only=True)
 
     try:
         stats = analyze_whatsapp_db(db_path, year=args.year)
     except sqlite3.DatabaseError as e:
-        print(f"\n❌ Database error: {e}")
-        print("\n💡 The file may be corrupted or not a valid WhatsApp database.")
-        print("💡 Make sure you're using ChatStorage.sqlite from an iOS backup.")
+        log(f"\n❌ Database error: {e}", verbose_only=False)
+        log("\n💡 The file may be corrupted or not a valid WhatsApp database.", verbose_only=False)
+        log("💡 Make sure you're using ChatStorage.sqlite from an iOS backup.", verbose_only=False)
         return
     except Exception as e:
-        print(f"\n❌ Error analyzing database: {e}")
-        print("\n💡 Make sure the file is a valid WhatsApp ChatStorage.sqlite database")
+        log(f"\n❌ Error analyzing database: {e}", verbose_only=False)
+        log("\n💡 Make sure the file is a valid WhatsApp ChatStorage.sqlite database", verbose_only=False)
         return
 
     # Save to JSON
@@ -1149,17 +1165,17 @@ def main():
         generate_html_wrapped(stats, html_output)
         html_generated = True
     except Exception as e:
-        print(f"\n⚠️  HTML generation failed: {e}")
+        log(f"\n⚠️  HTML generation failed: {e}", verbose_only=False)
         html_generated = False
 
-    print("\n" + "=" * 50)
+    log("\n" + "=" * 50, verbose_only=True)
     year_msg = f" for {args.year}" if args.year and args.year > 0 else ""
-    print(f"✅ Analysis complete{year_msg}!")
-    print(f"📊 Statistics saved to: {args.output}")
+    log(f"✅ Analysis complete{year_msg}!", verbose_only=False)
+    log(f"📊 Statistics saved to: {args.output}", verbose_only=False)
     if html_generated:
-        print(f"🎉 HTML visualization: {html_output}")
-        print(f"\n💡 Open {html_output} in your browser to see your Wrapped!")
-    print("\n🔒 Privacy: All data processed locally. Nothing sent anywhere.")
+        log(f"🎉 HTML visualization: {html_output}", verbose_only=False)
+        log(f"\n💡 Open {html_output} in your browser to see your Wrapped!", verbose_only=False)
+    log("\n🔒 Privacy: All data processed locally. Nothing sent anywhere.", verbose_only=False)
 
 if __name__ == "__main__":
     main()
