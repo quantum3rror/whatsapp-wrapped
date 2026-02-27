@@ -302,6 +302,14 @@
         </div>
       </section>
 
+      <!-- Slide: Sent vs Received Pie Chart -->
+      <section class="slide">
+        <h2 style="margin-bottom: 1.5rem">Sent vs Received</h2>
+        <div class="chart-container" style="max-width: 400px; height: 350px">
+          <canvas data-chart="sentReceived"></canvas>
+        </div>
+      </section>
+
       <!-- Slide 3: Top Individual Chat #1 -->
       {% if top_individual_chats and top_individual_chats|length > 0 %}
       <section class="slide" data-slide="2">
@@ -584,6 +592,9 @@
         const chartType = canvas.dataset.chart;
 
         switch (chartType) {
+          case "sentReceived":
+            createSentReceivedChart(canvas);
+            break;
           case "hours":
             createHourlyChart(canvas);
             break;
@@ -593,6 +604,66 @@
         }
 
         chartsInitialized.add(slideIndex);
+      }
+
+      // Create sent vs received pie chart
+      function createSentReceivedChart(canvas) {
+        const sent = wrappedData.sent || 0;
+        const received = wrappedData.received || 0;
+        const total = sent + received;
+        if (total === 0) {
+          canvas.parentElement.innerHTML =
+            '<p style="color: var(--secondary-color);">No data available</p>';
+          return;
+        }
+        const sentPct = ((sent / total) * 100).toFixed(1);
+        const receivedPct = ((received / total) * 100).toFixed(1);
+
+        new Chart(canvas, {
+          type: "doughnut",
+          data: {
+            labels: [`Sent (${sentPct}%)`, `Received (${receivedPct}%)`],
+            datasets: [
+              {
+                data: [sent, received],
+                backgroundColor: [
+                  "rgba(37, 211, 102, 0.9)",
+                  "rgba(255, 255, 255, 0.15)",
+                ],
+                borderColor: [
+                  "rgba(37, 211, 102, 1)",
+                  "rgba(255, 255, 255, 0.3)",
+                ],
+                borderWidth: 2,
+                hoverOffset: 8,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "55%",
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  color: "#ffffff",
+                  font: { size: 14, weight: "600" },
+                  padding: 20,
+                  usePointStyle: true,
+                  pointStyleWidth: 16,
+                },
+              },
+              tooltip: {
+                callbacks: {
+                  label: function (ctx) {
+                    return `${ctx.label}: ${ctx.raw.toLocaleString()} messages`;
+                  },
+                },
+              },
+            },
+          },
+        });
       }
 
       // Create hourly chart
