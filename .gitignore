@@ -53,3 +53,5 @@ ChatStorage.sqlite
 # Backups
 *.bak
 /db
+.mcp.json
+/.playwright-mcp
