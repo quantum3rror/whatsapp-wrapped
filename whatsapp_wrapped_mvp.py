@@ -401,7 +401,8 @@ def analyze_whatsapp_db(db_path, year=None):
     cursor.execute(f"""
         SELECT
             cs.ZPARTNERNAME,
-            COUNT(*) as msg_count
+            COUNT(*) as msg_count,
+            SUM(CASE WHEN m.ZISFROMME = 1 THEN 1 ELSE 0 END) as sent_count
         FROM ZWAMESSAGE m
         JOIN ZWACHATSESSION cs ON m.ZCHATSESSION = cs.Z_PK
         WHERE cs.ZPARTNERNAME IS NOT NULL
@@ -415,14 +416,16 @@ def analyze_whatsapp_db(db_path, year=None):
     top_individual_chats = cursor.fetchall()
 
     print("\n🏆 Top 10 Individual Chats:")
-    for i, (name, count) in enumerate(top_individual_chats, 1):
-        print(f"  {i}. {name}: {count:,} messages")
+    for i, (name, count, sent_c) in enumerate(top_individual_chats, 1):
+        pct = round(sent_c / count * 100, 1) if count > 0 else 0
+        print(f"  {i}. {name}: {count:,} messages ({pct}% sent)")
 
     # Top group chats (ZSESSIONTYPE = 1 for groups)
     cursor.execute(f"""
         SELECT
             cs.ZPARTNERNAME,
-            COUNT(*) as msg_count
+            COUNT(*) as msg_count,
+            SUM(CASE WHEN m.ZISFROMME = 1 THEN 1 ELSE 0 END) as sent_count
         FROM ZWAMESSAGE m
         JOIN ZWACHATSESSION cs ON m.ZCHATSESSION = cs.Z_PK
         WHERE cs.ZPARTNERNAME IS NOT NULL
@@ -436,8 +439,9 @@ def analyze_whatsapp_db(db_path, year=None):
     top_groups = cursor.fetchall()
 
     print("\n👥 Top 10 Group Chats:")
-    for i, (name, count) in enumerate(top_groups, 1):
-        print(f"  {i}. {name}: {count:,} messages")
+    for i, (name, count, sent_c) in enumerate(top_groups, 1):
+        pct = round(sent_c / count * 100, 1) if count > 0 else 0
+        print(f"  {i}. {name}: {count:,} messages ({pct}% sent)")
 
     # Messages by hour (all 24 hours)
     cursor.execute(f"""
@@ -578,7 +582,7 @@ def analyze_whatsapp_db(db_path, year=None):
           {date_filter}
         GROUP BY ZTEXT
         ORDER BY cnt DESC
-        LIMIT 5
+        LIMIT 10
     """)
     top_messages = cursor.fetchall()
     if top_messages:
@@ -602,8 +606,8 @@ def analyze_whatsapp_db(db_path, year=None):
             "start": str(min_dt.date()) if min_dt else None,
             "end": str(max_dt.date()) if max_dt else None
         },
-        "top_individual_chats": [{"name": name, "count": count} for name, count in top_individual_chats],
-        "top_groups": [{"name": name, "count": count} for name, count in top_groups],
+        "top_individual_chats": [{"name": name, "count": count, "sent": sent_c, "sent_pct": round(sent_c / count * 100, 1) if count > 0 else 0} for name, count, sent_c in top_individual_chats],
+        "top_groups": [{"name": name, "count": count, "sent": sent_c, "sent_pct": round(sent_c / count * 100, 1) if count > 0 else 0} for name, count, sent_c in top_groups],
         "top_hours": [{"hour": hour, "count": count} for hour, count in top_hours],
         "all_hours": [{"hour": hour, "count": count} for hour, count in all_hours],
         "days_of_week": [{"day": day, "count": count} for day, count in days],

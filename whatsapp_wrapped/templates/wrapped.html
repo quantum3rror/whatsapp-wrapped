@@ -337,6 +337,19 @@
           ≈ {{ (top_individual_chats[0].count / days_in_period)|round(1) }} per
           day
         </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1rem;
+            margin-top: 0.3rem;
+          "
+        >
+          You sent
+          <span style="color: var(--accent-color); font-weight: 600"
+            >{{ top_individual_chats[0].sent_pct }}%</span
+          >
+          of messages
+        </p>
       </section>
       {% endif %}
 
@@ -362,6 +375,19 @@
         >
           ≈ {{ (top_individual_chats[1].count / days_in_period)|round(1) }} per
           day
+        </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1rem;
+            margin-top: 0.3rem;
+          "
+        >
+          You sent
+          <span style="color: var(--accent-color); font-weight: 600"
+            >{{ top_individual_chats[1].sent_pct }}%</span
+          >
+          of messages
         </p>
       </section>
       {% endif %}
@@ -389,6 +415,19 @@
           ≈ {{ (top_individual_chats[2].count / days_in_period)|round(1) }} per
           day
         </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1rem;
+            margin-top: 0.3rem;
+          "
+        >
+          You sent
+          <span style="color: var(--accent-color); font-weight: 600"
+            >{{ top_individual_chats[2].sent_pct }}%</span
+          >
+          of messages
+        </p>
       </section>
       {% endif %}
 
@@ -411,7 +450,8 @@
                   font-weight: 400;
                 "
               >
-                (≈{{ (chat.count / days_in_period)|round(1) }}/d)
+                (≈{{ (chat.count / days_in_period)|round(1) }}/d · {{
+                chat.sent_pct }}% sent)
               </span>
             </td>
           </tr>
@@ -443,6 +483,19 @@
         >
           ≈ {{ (top_groups[0].count / days_in_period)|round(1) }} per day
         </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1rem;
+            margin-top: 0.3rem;
+          "
+        >
+          You sent
+          <span style="color: var(--accent-color); font-weight: 600"
+            >{{ top_groups[0].sent_pct }}%</span
+          >
+          of messages
+        </p>
       </section>
       {% endif %}
 
@@ -468,6 +521,19 @@
           "
         >
           ≈ {{ (top_groups[1].count / days_in_period)|round(1) }} per day
+        </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1rem;
+            margin-top: 0.3rem;
+          "
+        >
+          You sent
+          <span style="color: var(--accent-color); font-weight: 600"
+            >{{ top_groups[1].sent_pct }}%</span
+          >
+          of messages
         </p>
       </section>
       {% endif %}
@@ -495,6 +561,19 @@
         >
           ≈ {{ (top_groups[2].count / days_in_period)|round(1) }} per day
         </p>
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 1rem;
+            margin-top: 0.3rem;
+          "
+        >
+          You sent
+          <span style="color: var(--accent-color); font-weight: 600"
+            >{{ top_groups[2].sent_pct }}%</span
+          >
+          of messages
+        </p>
       </section>
       {% endif %}
 
@@ -516,7 +595,8 @@
                   font-weight: 400;
                 "
               >
-                (≈{{ (group.count / days_in_period)|round(1) }}/d)
+                (≈{{ (group.count / days_in_period)|round(1) }}/d · {{
+                group.sent_pct }}% sent)
               </span>
             </td>
           </tr>
@@ -569,7 +649,7 @@
       </section>
       {% endif %}
 
-      <!-- Slide: Most Sent Message -->
+      <!-- Slide: Most Sent Message Hero -->
       {% if top_messages and top_messages|length > 0 %}
       <section class="slide">
         <p style="color: var(--secondary-color); font-size: 1.5rem">
@@ -591,21 +671,31 @@
           </span>
           times
         </p>
-        {% if top_messages|length > 1 %}
-        <div
-          style="
-            margin-top: 2rem;
-            color: var(--secondary-color);
-            font-size: 1rem;
-          "
-        >
-          {% for msg in top_messages[1:3] %}
-          <p style="margin-top: 0.4rem">
-            #{{ loop.index + 1 }} "{{ msg.text[:40] }}{% if msg.text|length > 40 %}...{% endif %}" — {{ '{:,}'.format(msg.count) }}x
-          </p>
+      </section>
+      {% endif %}
+
+      <!-- Slide: Top 10 Most Sent Messages Table -->
+      {% if top_messages and top_messages|length > 1 %}
+      <section class="slide">
+        <h2 style="margin-bottom: 0.5rem">Top 10 Sent Messages</h2>
+        <table class="top10-table">
+          {% for msg in top_messages[:10] %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td
+              style="
+                max-width: 320px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              "
+            >
+              {{ msg.text }}
+            </td>
+            <td>{{ '{:,}'.format(msg.count) }}x</td>
+          </tr>
           {% endfor %}
-        </div>
-        {% endif %}
+        </table>
       </section>
       {% endif %}
 
