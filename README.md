@@ -1,14 +1,15 @@
-# WhatsApp Wrapped MVP
+# WhatsApp Wrapped
 
 Generate Spotify Wrapped-style statistics for your WhatsApp conversations!
 
-## Quick Start (MVP)
+## Quick Start
 
 ### Prerequisites
 
-1. **macOS** with iTunes/Finder backup of your iPhone
+1. **macOS** (Windows/Linux support planned but not tested)
 2. **Python 3.9+**
 3. **WhatsApp** installed on your iPhone with message history
+4. An **iTunes/Finder backup** of your iPhone
 
 ### Installation
 
@@ -19,24 +20,27 @@ pip install -r requirements.txt
 
 ### Usage
 
-**Option 1: Automatic (requires Full Disk Access)**
-
+**List all iOS backups**
 ```bash
-# Run the MVP script - auto-finds iOS backup
-python whatsapp_wrapped_mvp.py
+python whatsapp_wrapped_mvp.py --list-backups
 ```
 
-**Option 2: Manual database path (recommended for now)**
-
+**Automatic discovery (requires permissions)**
 ```bash
-# Analyze 2025 only (default)
-python whatsapp_wrapped_mvp.py --db /path/to/ChatStorage.sqlite
+# Analyze 2025 (default year)
+python whatsapp_wrapped_mvp.py
 
 # Analyze a different year
-python whatsapp_wrapped_mvp.py --db /path/to/ChatStorage.sqlite --year 2024
+python whatsapp_wrapped_mvp.py --year 2024
 
 # Analyze all years
-python whatsapp_wrapped_mvp.py --db /path/to/ChatStorage.sqlite --year 0
+python whatsapp_wrapped_mvp.py --year 0
+```
+
+**Manual database path**
+```bash
+# Use a specific ChatStorage.sqlite file
+python whatsapp_wrapped_mvp.py --db /path/to/ChatStorage.sqlite
 
 # Custom output file
 python whatsapp_wrapped_mvp.py --db /path/to/ChatStorage.sqlite --output my_stats.json
@@ -84,8 +88,19 @@ The script will:
 
 #### Where Backups are Stored:
 
+**macOS (tested)**
 ```
 ~/Library/Application Support/MobileSync/Backup/
+```
+
+**Windows (Apple Devices app - experimental)**
+```
+C:\Users\<USER>\Apple\MobileSync\Backup
+```
+
+**Linux (experimental - not tested)**
+```
+~/.config/apple-mobile-sync/Backup
 ```
 
 ### Privacy & Security
@@ -118,33 +133,8 @@ The script will:
 
 **"Permission denied"**
 - Make sure the script has read access to your backup folder
-- On macOS, you may need to grant Terminal "Full Disk Access" in System Preferences > Privacy & Security
-- **Alternative**: Extract the database manually and use `--db` flag (see below)
-
-### Manual Database Extraction (No Full Disk Access Required)
-
-If you can't or don't want to grant Full Disk Access, you can manually extract the database:
-
-#### Method 1: Using iMazing (Free)
-
-1. Download [iMazing](https://imazing.com/) (free for this use case)
-2. Connect your iPhone
-3. Select your device → Apps → WhatsApp
-4. Click "Extract App Data"
-5. Find `ChatStorage.sqlite` in the extracted files
-6. Run: `python whatsapp_wrapped_mvp.py --db /path/to/ChatStorage.sqlite`
-
-#### Method 2: From Backup (Manual)
-
-The WhatsApp database is located in your iOS backup at a specific hash. If you can access your backup folder:
-
-```bash
-# The file hash for ChatStorage.sqlite
-# Located at: ~/Library/Application Support/MobileSync/Backup/{BACKUP_ID}/7c/7c7fba66680ef796b916b067077cc246adacf01d
-
-# Copy it somewhere accessible and run:
-python whatsapp_wrapped_mvp.py --db ~/Desktop/ChatStorage.sqlite
-```
+- On macOS, grant Terminal "Full Disk Access" in System Settings → Privacy & Security
+- Restart Terminal after granting permissions
 
 ## Technical Details
 
