@@ -517,8 +517,10 @@ def generate_html_wrapped(stats, output_file):
         total_messages=f"{stats['total_messages']:,}",
         sent=f"{stats['sent']:,}",
         received=f"{stats['received']:,}",
-        top_individual_chats=top_individual_chats[:3],  # Top 3
-        top_groups=top_groups[:3],  # Top 3
+        top_individual_chats=top_individual_chats[:3],  # Top 3 for hero slides
+        top_individual_chats_full=stats.get('top_individual_chats', []),  # Full top 10 for table
+        top_groups=top_groups[:3],  # Top 3 for hero slides
+        top_groups_full=stats.get('top_groups', []),  # Full top 10 for table
         total_conversations=stats['total_conversations'],
         date_range=stats.get('date_range', {}),
         personality=stats.get('personality', 'Chatter'),
