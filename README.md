@@ -25,11 +25,13 @@ pip install -r requirements.txt
 ### Usage
 
 **List all iOS backups**
+
 ```bash
 python whatsapp_wrapped.py --list-backups
 ```
 
 **Automatic discovery (requires permissions)**
+
 ```bash
 # Analyze 2025 (default year)
 python whatsapp_wrapped.py
@@ -37,11 +39,15 @@ python whatsapp_wrapped.py
 # Analyze a different year
 python whatsapp_wrapped.py --year 2024
 
+# Analyze a range of years
+python whatsapp_wrapped.py --year 2023-2025
+
 # Analyze all years
 python whatsapp_wrapped.py --year 0
 ```
 
 **Manual database path**
+
 ```bash
 # Use a specific ChatStorage.sqlite file (extracted with iMazing, etc.)
 python whatsapp_wrapped.py --db /path/to/ChatStorage.sqlite
@@ -56,6 +62,7 @@ python whatsapp_wrapped.py --db /path/to/ChatStorage.sqlite --output my_stats.js
 > **Note:** In iOS backups, files are renamed to SHA-1 hashes. The actual file is a SQLite database - you can use either the extracted `ChatStorage.sqlite` name or the hashed filename directly from the backup.
 
 The script will:
+
 1. 🔍 Find your iOS backups automatically (or use provided path)
 2. 📱 Extract WhatsApp database from the most recent backup
 3. 📊 Analyze your messages and generate statistics
@@ -80,6 +87,7 @@ Want to see what it looks like without running it? Check out the [demo output](e
 2. **HTML file** (`whatsapp_wrapped_stats.html`) - Beautiful interactive visualization!
 
 **Statistics included:**
+
 - **Total messages** sent and received
 - **Top 3 individual chats** - Your most active 1-on-1 conversations
 - **Top 3 group chats** - Your most active group conversations
@@ -89,6 +97,7 @@ Want to see what it looks like without running it? Check out the [demo output](e
 - **Interactive charts** powered by Chart.js
 
 **Controls for HTML visualization:**
+
 - **Keyboard**: Arrow keys (← →) or Spacebar
 - **Touch**: Swipe left/right on mobile
 - **Mouse**: Click prev/next buttons
@@ -108,11 +117,13 @@ Want to see what it looks like without running it? Check out the [demo output](e
 #### Where Backups are Stored:
 
 **macOS**
+
 ```
 ~/Library/Application Support/MobileSync/Backup/
 ```
 
 **Windows (Apple Devices app)**
+
 ```
 C:\Users\<YourName>\Apple\MobileSync\Backup
 ```
@@ -137,15 +148,18 @@ C:\Users\<YourName>\Apple\MobileSync\Backup
 ## Troubleshooting
 
 **"No iOS backups found"**
+
 - Make sure you've created a backup using Finder/iTunes
 - Check that backups exist at `~/Library/Application Support/MobileSync/Backup/`
 
 **"WhatsApp database not found"**
+
 - Ensure WhatsApp is installed on your iPhone
 - Make sure you have WhatsApp message history
 - Try creating a fresh backup
 
 **"Permission denied"**
+
 - Make sure the script has read access to your backup folder
 - On macOS, grant Terminal "Full Disk Access" in System Settings → Privacy & Security
 - Restart Terminal after granting permissions
@@ -175,4 +189,3 @@ This is an open source project. Contributions welcome!
 ## Acknowledgments
 
 Inspired by [imessage-wrapped](https://github.com/vuciv/imessage-wrapped) - a project that brings the Wrapped experience to iMessage conversations.
-
