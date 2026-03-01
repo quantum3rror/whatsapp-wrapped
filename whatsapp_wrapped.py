@@ -964,7 +964,7 @@ def analyze_whatsapp_db(db_path, year=None):
     conn.close()
     return stats
 
-def generate_html_wrapped(stats, output_file):
+def generate_html_wrapped(stats, output_file=None):
     """Generate HTML Wrapped visualization"""
     # Import personality classifier
     import sys
@@ -986,7 +986,7 @@ def generate_html_wrapped(stats, output_file):
     if not template_path.exists():
         log(f"⚠️  Template not found at {template_path}", verbose_only=False)
         log("   HTML generation skipped.", verbose_only=False)
-        return
+        return None
 
     with open(template_path, 'r', encoding='utf-8') as f:
         template_content = f.read()
@@ -1043,8 +1043,10 @@ def generate_html_wrapped(stats, output_file):
     )
 
     # Write HTML file
-    with open(output_file, 'w', encoding='utf-8') as f:
-        f.write(html)
+    if output_file:
+        with open(output_file, 'w', encoding='utf-8') as f:
+            f.write(html)
+    return html
 
 def main():
     parser = argparse.ArgumentParser(

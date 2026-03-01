@@ -1,23 +1,7 @@
 # WhatsApp Wrapped - Python Dependencies
 
-# iOS backup access and decryption
-iphone-backup-decrypt
-
-# Database ORM and queries
-sqlalchemy>=2.0.0
-
-# Data analysis
-pandas>=2.0.0
-numpy>=1.24.0
-
 # Template engine for HTML generation
 jinja2>=3.1.0
 
-# CLI framework and beautiful terminal output
-click>=8.1.0
-rich>=13.0.0
-
-# Development dependencies (optional)
-# pytest>=7.4.0
-# black>=23.0.0
-# mypy>=1.5.0
+# GUI wrapper (double-clickable app)
+pywebview>=5.0

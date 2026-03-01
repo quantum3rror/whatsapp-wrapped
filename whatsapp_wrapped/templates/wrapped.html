@@ -50,9 +50,13 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        padding: 2rem;
+        /* top/bottom padding must clear the fixed overlays:
+           top bar (section-nav + progress) ends ~5rem from top;
+           controls sit ~5rem from bottom. */
+        padding: 6rem 2rem;
         opacity: 0;
         pointer-events: none;
+        overflow-y: auto;
         transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         text-align: center;
       }
@@ -70,7 +74,8 @@
       }
 
       h2 {
-        font-size: clamp(2rem, 6vw, 5rem);
+        /* scale with both viewport width AND height so it doesn't crowd list slides */
+        font-size: clamp(1.4rem, min(5vw, 5vh), 3.5rem);
         font-weight: 700;
       }
 
@@ -353,13 +358,26 @@
         height: 400px;
       }
 
-      /* Top 10 Table Styles */
-      .top10-table {
+      /* Scrollable wrapper for list slides */
+      .top10-scroll {
         width: 90%;
         max-width: 600px;
-        margin-top: 1.5rem;
+        /* cap height to the available space between the two fixed overlays */
+        max-height: calc(100dvh - 16rem);
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: var(--card-bg) transparent;
+        margin-top: 0.5rem;
+      }
+      .top10-scroll::-webkit-scrollbar { width: 4px; }
+      .top10-scroll::-webkit-scrollbar-thumb { background: var(--card-bg); border-radius: 2px; }
+
+      /* Top 10 Table Styles */
+      .top10-table {
+        width: 100%;
         border-collapse: separate;
-        border-spacing: 0 0.4rem;
+        /* row gap scales with viewport height */
+        border-spacing: 0 clamp(0.15rem, 0.5vh, 0.4rem);
       }
 
       .top10-table tr {
@@ -368,8 +386,9 @@
       }
 
       .top10-table td {
-        padding: 0.7rem 1rem;
-        font-size: clamp(0.85rem, 2.5vw, 1.1rem);
+        /* padding and font both scale with viewport height */
+        padding: clamp(0.3rem, 1vh, 0.7rem) 1rem;
+        font-size: clamp(0.75rem, min(2.2vw, 1.8vh), 1.1rem);
       }
 
       .top10-table td:first-child {
@@ -409,7 +428,8 @@
 
       @media (max-width: 768px) {
         .slide {
-          padding: 1rem;
+          /* on small screens the top bar is ~4rem, controls ~4rem */
+          padding: 5rem 1rem;
         }
 
         h1 {
@@ -434,12 +454,13 @@
           width: 150px;
         }
 
-        .top10-table {
+        .top10-scroll {
           width: 95%;
+          max-height: calc(100dvh - 13rem);
         }
 
         .top10-table td {
-          padding: 0.5rem 0.6rem;
+          padding: clamp(0.25rem, 0.8vh, 0.5rem) 0.6rem;
         }
       }
 
@@ -731,27 +752,29 @@
       %}
       <section class="slide" data-section="Chats">
         <h2 style="margin-bottom: 0.5rem">Top 10 Chats</h2>
-        <table class="top10-table">
-          {% for chat in top_individual_chats_full[:10] %}
-          <tr>
-            <td>{{ loop.index }}</td>
-            <td>{{ chat.name }}</td>
-            <td>
-              {{ '{:,}'.format(chat.count) }}
-              <span
-                style="
-                  color: var(--secondary-color);
-                  font-size: 0.75em;
-                  font-weight: 400;
-                "
-              >
-                (≈{{ (chat.count / days_in_period)|round(1) }}/d · {{
-                chat.sent_pct }}% sent)
-              </span>
-            </td>
-          </tr>
-          {% endfor %}
-        </table>
+        <div class="top10-scroll">
+          <table class="top10-table">
+            {% for chat in top_individual_chats_full[:10] %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ chat.name }}</td>
+              <td>
+                {{ '{:,}'.format(chat.count) }}
+                <span
+                  style="
+                    color: var(--secondary-color);
+                    font-size: 0.75em;
+                    font-weight: 400;
+                  "
+                >
+                  (≈{{ (chat.count / days_in_period)|round(1) }}/d · {{
+                  chat.sent_pct }}% sent)
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </table>
+        </div>
       </section>
       {% endif %}
 
@@ -899,27 +922,29 @@
       {% if top_groups_full and top_groups_full|length > 3 %}
       <section class="slide" data-section="Groups">
         <h2 style="margin-bottom: 0.5rem">Top 10 Groups</h2>
-        <table class="top10-table">
-          {% for group in top_groups_full[:10] %}
-          <tr>
-            <td>{{ loop.index }}</td>
-            <td>{{ group.name }}</td>
-            <td>
-              {{ '{:,}'.format(group.count) }}
-              <span
-                style="
-                  color: var(--secondary-color);
-                  font-size: 0.75em;
-                  font-weight: 400;
-                "
-              >
-                (≈{{ (group.count / days_in_period)|round(1) }}/d · {{
-                group.sent_pct }}% sent)
-              </span>
-            </td>
-          </tr>
-          {% endfor %}
-        </table>
+        <div class="top10-scroll">
+          <table class="top10-table">
+            {% for group in top_groups_full[:10] %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ group.name }}</td>
+              <td>
+                {{ '{:,}'.format(group.count) }}
+                <span
+                  style="
+                    color: var(--secondary-color);
+                    font-size: 0.75em;
+                    font-weight: 400;
+                  "
+                >
+                  (≈{{ (group.count / days_in_period)|round(1) }}/d · {{
+                  group.sent_pct }}% sent)
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </table>
+        </div>
       </section>
       {% endif %}
 
@@ -1181,15 +1206,17 @@
         >
           Most used by you
         </p>
-        <table class="top10-table">
-          {% for item in top_emojis[:10] %}
-          <tr>
-            <td>{{ loop.index }}</td>
-            <td style="font-size: 1.6rem">{{ item.emoji }}</td>
-            <td>{{ '{:,}'.format(item.count) }}</td>
-          </tr>
-          {% endfor %}
-        </table>
+        <div class="top10-scroll">
+          <table class="top10-table">
+            {% for item in top_emojis[:10] %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td style="font-size: clamp(1rem, 3vh, 1.6rem)">{{ item.emoji }}</td>
+              <td>{{ '{:,}'.format(item.count) }}</td>
+            </tr>
+            {% endfor %}
+          </table>
+        </div>
       </section>
       {% endif %}
 
@@ -1222,24 +1249,26 @@
       {% if top_messages and top_messages|length > 1 %}
       <section class="slide" data-section="Content">
         <h2 style="margin-bottom: 0.5rem">Top 10 Sent Messages</h2>
-        <table class="top10-table">
-          {% for msg in top_messages[:10] %}
-          <tr>
-            <td>{{ loop.index }}</td>
-            <td
-              style="
-                max-width: 320px;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-              "
-            >
-              {{ msg.text }}
-            </td>
-            <td>{{ '{:,}'.format(msg.count) }}x</td>
-          </tr>
-          {% endfor %}
-        </table>
+        <div class="top10-scroll">
+          <table class="top10-table">
+            {% for msg in top_messages[:10] %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td
+                style="
+                  max-width: 320px;
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                  white-space: nowrap;
+                "
+              >
+                {{ msg.text }}
+              </td>
+              <td>{{ '{:,}'.format(msg.count) }}x</td>
+            </tr>
+            {% endfor %}
+          </table>
+        </div>
       </section>
       {% endif %}
 
