@@ -477,16 +477,33 @@ class Api:
 # ---------------------------------------------------------------------------
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--html', metavar='FILE',
+                        help='Load an existing wrapped HTML file directly (skips landing page)')
+    args = parser.parse_args()
+
     api = Api()
 
-    window = webview.create_window(
-        'WhatsApp Wrapped',
-        html=LANDING_HTML,
-        js_api=api,
-        width=1100,
-        height=750,
-        min_size=(800, 600),
-    )
+    if args.html:
+        html = Path(args.html).read_text(encoding='utf-8')
+        window = webview.create_window(
+            'WhatsApp Wrapped — Preview',
+            html=html,
+            js_api=api,
+            width=1100,
+            height=750,
+            min_size=(800, 600),
+        )
+    else:
+        window = webview.create_window(
+            'WhatsApp Wrapped',
+            html=LANDING_HTML,
+            js_api=api,
+            width=1100,
+            height=750,
+            min_size=(800, 600),
+        )
 
     api.window = window
     webview.start()

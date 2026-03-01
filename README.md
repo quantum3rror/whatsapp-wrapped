@@ -68,9 +68,10 @@ Want to see what it looks like without running it? Check out the [demo output](e
 
 ![Intro](examples/screenshots/01-intro.png)
 ![Stats](examples/screenshots/02-stats.png)
-![Contacts](examples/screenshots/03-contacts.png)
+![Top Chat](examples/screenshots/03-top-chat.png)
+![Top Chats List](examples/screenshots/04-top-chats-list.png)
 ![Media](examples/screenshots/05-media.png)
-![Full View](examples/screenshots/04-full.png)
+![Personality](examples/screenshots/06-personality.png)
 
 ### What You'll Get
 
