@@ -245,9 +245,9 @@ LANDING_HTML = """<!DOCTYPE html>
 
   <!-- Year -->
   <div class="field">
-    <label for="year">Year</label>
-    <input type="number" id="year" value="2025" min="2000" max="2099">
-    <p class="hint">Enter 0 to analyse all time</p>
+    <label for="year">Year / Range</label>
+    <input type="text" id="year" value="2025" placeholder="e.g. 2025 or 2023-2025 or 0">
+    <p class="hint">Single year (2025), range (2023-2025), or 0 for all time</p>
   </div>
 
   <!-- Backup selector (populated on load) -->
@@ -355,17 +355,48 @@ async function browse() {
 
 async function generate() {
   const btn         = document.getElementById('btn');
-  const year        = parseInt(document.getElementById('year').value) || 0;
+  const raw         = document.getElementById('year').value.trim();
   const db          = document.getElementById('db').value.trim() || null;
   const backupSel   = document.getElementById('backup-select');
   const backupIndex = backupSel.value !== '' ? parseInt(backupSel.value) : 0;
+
+  // ── Validate & parse year input ─────────────────────────────────────────
+  let startYear = 0;
+  let endYear   = 0;
+
+  if (raw === '' || raw === '0') {
+    startYear = 0;  // all time
+    endYear   = 0;
+  } else {
+    const rangeMatch = raw.match(/^\s*(\d{4})\s*[-–]\s*(\d{4})\s*$/);
+    const singleMatch = raw.match(/^\s*(\d{4})\s*$/);
+
+    if (rangeMatch) {
+      startYear = parseInt(rangeMatch[1]);
+      endYear   = parseInt(rangeMatch[2]);
+      if (startYear > endYear) { [startYear, endYear] = [endYear, startYear]; }
+      if (startYear < 2000 || endYear > 2099) {
+        setStatus('Year must be between 2000 and 2099.', 'error');
+        return;
+      }
+    } else if (singleMatch) {
+      startYear = parseInt(singleMatch[1]);
+      if (startYear < 2000 || startYear > 2099) {
+        setStatus('Year must be between 2000 and 2099.', 'error');
+        return;
+      }
+    } else {
+      setStatus('Invalid year. Use a single year (2025), a range (2023-2025), or 0 for all time.', 'error');
+      return;
+    }
+  }
 
   btn.disabled = true;
   btn.textContent = 'Analysing…';
   setStatus('Running analysis, please wait…', 'info');
 
   try {
-    const result = await window.pywebview.api.run_analysis(year, backupIndex, db);
+    const result = await window.pywebview.api.run_analysis(startYear, endYear, backupIndex, db);
     if (result && result.error) {
       setStatus('Error: ' + result.error, 'error');
       btn.disabled = false;
@@ -431,7 +462,7 @@ class Api:
             return result[0]
         return None
 
-    def run_analysis(self, year, backup_index, db_path):
+    def run_analysis(self, start_year, end_year, backup_index, db_path):
         """
         Called from JS in a background thread.
         Returns {'error': str} on failure.
@@ -439,8 +470,10 @@ class Api:
         callback fires before the page is replaced) and returns {'success': True}.
         """
         try:
-            year = int(year) if year else 0
-            year = year if year > 0 else None  # None → all time
+            start_year = int(start_year) if start_year else 0
+            end_year   = int(end_year) if end_year else 0
+            year = start_year if start_year > 0 else None
+            ey   = end_year if end_year > 0 else None
 
             if db_path:
                 db = Path(db_path)
@@ -457,7 +490,7 @@ class Api:
                 if not db:
                     return {'error': 'WhatsApp database not found in the selected backup.'}
 
-            stats = analyze_whatsapp_db(db, year=year)
+            stats = analyze_whatsapp_db(db, year=year, end_year=ey)
 
             html = generate_html_wrapped(stats)
 

@@ -356,19 +356,42 @@ def get_year_timestamp_bounds(year):
 
     return start_apple, end_apple
 
-def analyze_whatsapp_db(db_path, year=None):
-    """Analyze WhatsApp database and extract statistics"""
+def analyze_whatsapp_db(db_path, year=None, end_year=None):
+    """Analyze WhatsApp database and extract statistics.
+
+    Args:
+        db_path: Path to the WhatsApp SQLite database.
+        year: Single year to filter, or start of a range. 0/None = all time.
+        end_year: End year for a range (inclusive). If set, filters from
+                  Jan 1 of *year* through Dec 31 of *end_year*.
+    """
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
+    # Normalise year / end_year
+    if year is not None and year <= 0:
+        year = None
+    if end_year is not None and end_year <= 0:
+        end_year = None
+    if end_year is not None and year is not None and end_year < year:
+        year, end_year = end_year, year  # swap if reversed
+    # If start == end, collapse to single-year mode
+    if end_year is not None and end_year == year:
+        end_year = None
+
     # Set up date filtering
     if year and year > 0:
-        start_ts, end_ts = get_year_timestamp_bounds(year)
+        start_ts, _ = get_year_timestamp_bounds(year)
+        _, end_ts = get_year_timestamp_bounds(end_year if end_year else year)
         date_filter = f"AND ZMESSAGEDATE >= {start_ts} AND ZMESSAGEDATE <= {end_ts}"
-        log(f"🗓️  Filtering for year: {year}\n", verbose_only=True)
+        if end_year:
+            log(f"🗓️  Filtering for years: {year}–{end_year}\n", verbose_only=True)
+        else:
+            log(f"🗓️  Filtering for year: {year}\n", verbose_only=True)
     else:
         date_filter = ""
         year = None  # Ensure None for "all years"
+        end_year = None
 
     log("📊 Analyzing WhatsApp database...\n", verbose_only=True)
 
@@ -498,7 +521,8 @@ def analyze_whatsapp_db(db_path, year=None):
     # Calculate days in analysis period
     if year and year > 0:
         period_start = datetime(year, 1, 1)
-        period_end = min(datetime(year, 12, 31), datetime.now())
+        last_year = end_year if end_year else year
+        period_end = min(datetime(last_year, 12, 31), datetime.now())
         days_in_period = max((period_end - period_start).days, 1)
     elif min_dt and max_dt:
         days_in_period = max((max_dt - min_dt).days, 1)
@@ -710,10 +734,11 @@ def analyze_whatsapp_db(db_path, year=None):
     # Chat timeline for top 1 person and top 1 group (messages per month)
     log("\n📈 Chat timelines...", verbose_only=True)
     chat_timelines = {}
+    is_range = end_year is not None  # multi-year range
     is_lifetime = not (year and year > 0)
 
-    if is_lifetime:
-        # Lifetime mode: group by year+month for full history
+    if is_lifetime or is_range:
+        # Lifetime / multi-year mode: group by year+month for full history
         timeline_select = """CAST(strftime('%Y', datetime(m.ZMESSAGEDATE + 978307200, 'unixepoch')) AS INTEGER) as yr,
                 CAST(strftime('%m', datetime(m.ZMESSAGEDATE + 978307200, 'unixepoch')) AS INTEGER) as month"""
         timeline_group = "GROUP BY yr, month ORDER BY yr, month"
@@ -745,11 +770,11 @@ def analyze_whatsapp_db(db_path, year=None):
             WHERE cs.ZPARTNERNAME = ? AND m.ZMESSAGEDATE IS NOT NULL {date_filter}
             {timeline_group}
         """, (top1_name,))
-        months_data = build_timeline_months(cursor.fetchall(), is_lifetime)
+        months_data = build_timeline_months(cursor.fetchall(), is_lifetime or is_range)
         chat_timelines['top_chat'] = {
             'name': top1_name,
             'months': months_data,
-            'is_lifetime': is_lifetime
+            'is_lifetime': is_lifetime or is_range
         }
         log(f"  {top1_name}: {sum(x['count'] for x in months_data):,} msgs over {len(months_data)} months", verbose_only=True)
 
@@ -762,11 +787,11 @@ def analyze_whatsapp_db(db_path, year=None):
             WHERE cs.ZPARTNERNAME = ? AND m.ZMESSAGEDATE IS NOT NULL {date_filter}
             {timeline_group}
         """, (top1_group,))
-        months_data = build_timeline_months(cursor.fetchall(), is_lifetime)
+        months_data = build_timeline_months(cursor.fetchall(), is_lifetime or is_range)
         chat_timelines['top_group'] = {
             'name': top1_group,
             'months': months_data,
-            'is_lifetime': is_lifetime
+            'is_lifetime': is_lifetime or is_range
         }
         log(f"  {top1_group}: {sum(x['count'] for x in months_data):,} msgs over {len(months_data)} months", verbose_only=True)
 
@@ -929,8 +954,16 @@ def analyze_whatsapp_db(db_path, year=None):
         log(f"  {longest_gap['chat']}: {gap_days} days", verbose_only=True)
 
     # Prepare statistics for JSON output
+    #  year_display: used by the HTML template for the title
+    if year and end_year:
+        year_display_value = f"{year}\u2013{end_year}"
+    elif year:
+        year_display_value = year           # single int
+    else:
+        year_display_value = None           # "All Time"
+
     stats = {
-        "year": year,
+        "year": year_display_value,
         "total_messages": total_messages,
         "sent": sent,
         "received": received,
