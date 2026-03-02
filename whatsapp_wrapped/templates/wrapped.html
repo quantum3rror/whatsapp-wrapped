@@ -579,6 +579,17 @@
         align-self: flex-start;
       }
 
+      .message-sender {
+        font-size: 0.7rem;
+        font-weight: 600;
+        margin-bottom: 0.15rem;
+        color: var(--accent-color);
+      }
+
+      .message-bubble.sent .message-sender {
+        color: #53bdeb;
+      }
+
       .message-meta {
         font-size: 0.65rem;
         color: var(--secondary-color);
@@ -1069,7 +1080,7 @@
             margin-top: 0.3rem;
           "
         >
-          To
+          {% if first_message_sent.is_group %}In{% else %}To{% endif %}
           <span style="color: var(--text-color); font-weight: 600"
             >{{ first_message_sent.chat }}</span
           >
@@ -1077,7 +1088,9 @@
         </p>
         <div class="chat-thread">
           <div class="message-bubble highlight sent">
-            {{ first_message_sent.text }}
+            {% if first_message_sent.is_group and first_message_sent.sender %}
+            <div class="message-sender">{{ first_message_sent.sender }}</div>
+            {% endif %} {{ first_message_sent.text }}
             <div class="message-meta">{{ first_message_sent.time }}</div>
           </div>
           {% if first_message_sent.context %} {% for ctx in
@@ -1085,7 +1098,9 @@
           <div
             class="message-bubble context {{ 'sent' if ctx.from_me else 'received' }}"
           >
-            {{ ctx.text }}
+            {% if first_message_sent.is_group and ctx.sender %}
+            <div class="message-sender">{{ ctx.sender }}</div>
+            {% endif %} {{ ctx.text }}
             <div class="message-meta">{{ ctx.time }}</div>
           </div>
           {% endfor %} {% endif %}
@@ -1106,7 +1121,7 @@
             margin-top: 0.3rem;
           "
         >
-          From
+          {% if first_message_received.is_group %}In{% else %}From{% endif %}
           <span style="color: var(--text-color); font-weight: 600"
             >{{ first_message_received.chat }}</span
           >
@@ -1114,7 +1129,12 @@
         </p>
         <div class="chat-thread">
           <div class="message-bubble highlight received">
-            {{ first_message_received.text }}
+            {% if first_message_received.is_group and
+            first_message_received.sender %}
+            <div class="message-sender">
+              {{ first_message_received.sender }}
+            </div>
+            {% endif %} {{ first_message_received.text }}
             <div class="message-meta">{{ first_message_received.time }}</div>
           </div>
           {% if first_message_received.context %} {% for ctx in
@@ -1122,7 +1142,9 @@
           <div
             class="message-bubble context {{ 'sent' if ctx.from_me else 'received' }}"
           >
-            {{ ctx.text }}
+            {% if first_message_received.is_group and ctx.sender %}
+            <div class="message-sender">{{ ctx.sender }}</div>
+            {% endif %} {{ ctx.text }}
             <div class="message-meta">{{ ctx.time }}</div>
           </div>
           {% endfor %} {% endif %}
@@ -1143,7 +1165,7 @@
             margin-top: 0.3rem;
           "
         >
-          To
+          {% if last_message_sent.is_group %}In{% else %}To{% endif %}
           <span style="color: var(--text-color); font-weight: 600"
             >{{ last_message_sent.chat }}</span
           >
@@ -1155,12 +1177,16 @@
           <div
             class="message-bubble context {{ 'sent' if ctx.from_me else 'received' }}"
           >
-            {{ ctx.text }}
+            {% if last_message_sent.is_group and ctx.sender %}
+            <div class="message-sender">{{ ctx.sender }}</div>
+            {% endif %} {{ ctx.text }}
             <div class="message-meta">{{ ctx.time }}</div>
           </div>
           {% endfor %} {% endif %}
           <div class="message-bubble highlight sent">
-            {{ last_message_sent.text }}
+            {% if last_message_sent.is_group and last_message_sent.sender %}
+            <div class="message-sender">{{ last_message_sent.sender }}</div>
+            {% endif %} {{ last_message_sent.text }}
             <div class="message-meta">{{ last_message_sent.time }}</div>
           </div>
         </div>
@@ -1180,7 +1206,7 @@
             margin-top: 0.3rem;
           "
         >
-          From
+          {% if last_message_received.is_group %}In{% else %}From{% endif %}
           <span style="color: var(--text-color); font-weight: 600"
             >{{ last_message_received.chat }}</span
           >
@@ -1192,12 +1218,17 @@
           <div
             class="message-bubble context {{ 'sent' if ctx.from_me else 'received' }}"
           >
-            {{ ctx.text }}
+            {% if last_message_received.is_group and ctx.sender %}
+            <div class="message-sender">{{ ctx.sender }}</div>
+            {% endif %} {{ ctx.text }}
             <div class="message-meta">{{ ctx.time }}</div>
           </div>
           {% endfor %} {% endif %}
           <div class="message-bubble highlight received">
-            {{ last_message_received.text }}
+            {% if last_message_received.is_group and
+            last_message_received.sender %}
+            <div class="message-sender">{{ last_message_received.sender }}</div>
+            {% endif %} {{ last_message_received.text }}
             <div class="message-meta">{{ last_message_received.time }}</div>
           </div>
         </div>

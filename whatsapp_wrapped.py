@@ -851,16 +851,47 @@ def analyze_whatsapp_db(db_path, year=None, end_year=None):
 
     def fetch_message_with_context(cursor, date_filter, order, from_me_filter=None, context_count=3):
         """Fetch the first/last message and surrounding context from the same chat.
-        from_me_filter: None=any, 1=sent, 0=received"""
+        from_me_filter: None=any, 1=sent, 0=received
+        
+        For group chats, resolves sender names via multiple fallbacks:
+          1. ZWACHATSESSION.ZPARTNERNAME (contact name from individual chat)
+          2. ZWAPROFILEPUSHNAME.ZPUSHNAME (WhatsApp display name)
+          3. Phone number extracted from ZWAGROUPMEMBER.ZMEMBERJID
+        """
         from_me_clause = ""
         if from_me_filter is not None:
             from_me_clause = f"AND m.ZISFROMME = {from_me_filter}"
 
+        # sender_name resolution:
+        #   - ZISFROMME=1 → 'You'
+        #   - Match group member JID to an individual chat session for the saved contact name
+        #   - Fall back to ZWAPROFILEPUSHNAME (push/display name set by the user)
+        #   - Fall back to phone number from ZMEMBERJID (only for @s.whatsapp.net JIDs)
+        #   - Otherwise 'Unbekannt' (for @lid internal IDs, @bot, or truly unknown)
+        sender_case = """
+            CASE
+                WHEN m.ZISFROMME = 1 THEN 'You'
+                WHEN cs_contact.ZPARTNERNAME IS NOT NULL AND cs_contact.ZPARTNERNAME != '' THEN cs_contact.ZPARTNERNAME
+                WHEN ppn.ZPUSHNAME IS NOT NULL AND ppn.ZPUSHNAME != '' THEN ppn.ZPUSHNAME
+                WHEN gm.ZMEMBERJID LIKE '%@s.whatsapp.net' THEN REPLACE(gm.ZMEMBERJID, '@s.whatsapp.net', '')
+                ELSE 'Unbekannt'
+            END as sender_name
+        """
+
+        # Extra JOINs for sender name resolution in group chats
+        sender_joins = """
+            LEFT JOIN ZWAGROUPMEMBER gm ON m.ZGROUPMEMBER = gm.Z_PK
+            LEFT JOIN ZWACHATSESSION cs_contact ON cs_contact.ZCONTACTJID = gm.ZMEMBERJID AND cs_contact.ZSESSIONTYPE = 0
+            LEFT JOIN ZWAPROFILEPUSHNAME ppn ON ppn.ZJID = gm.ZMEMBERJID
+        """
+
         cursor.execute(f"""
             SELECT m.ZTEXT, cs.ZPARTNERNAME, m.ZISFROMME,
-                   m.ZMESSAGEDATE, m.ZCHATSESSION
+                   m.ZMESSAGEDATE, m.ZCHATSESSION, cs.ZSESSIONTYPE,
+                   {sender_case}
             FROM ZWAMESSAGE m
             JOIN ZWACHATSESSION cs ON m.ZCHATSESSION = cs.Z_PK
+            {sender_joins}
             WHERE m.ZTEXT IS NOT NULL AND m.ZMESSAGEDATE IS NOT NULL
               AND cs.ZPARTNERNAME IS NOT NULL {date_filter} {from_me_clause}
             ORDER BY m.ZMESSAGEDATE {order} LIMIT 1
@@ -869,12 +900,15 @@ def analyze_whatsapp_db(db_path, year=None, end_year=None):
         if not row:
             return None
         dt_obj = apple_timestamp_to_datetime(row[3])
+        is_group = row[5] == 1
         main_msg = {
             'text': row[0][:100],
             'chat': row[1],
             'from_me': row[2] == 1,
             'date': dt_obj.strftime('%Y-%m-%d'),
             'time': dt_obj.strftime('%H:%M'),
+            'is_group': is_group,
+            'sender': row[6] if is_group else None,
         }
         chat_session = row[4]
         msg_date = row[3]
@@ -883,8 +917,10 @@ def analyze_whatsapp_db(db_path, year=None, end_year=None):
         if order == 'ASC':
             # First message: get a few messages AFTER it in the same chat for context thread
             cursor.execute(f"""
-                SELECT m.ZTEXT, m.ZISFROMME, m.ZMESSAGEDATE
+                SELECT m.ZTEXT, m.ZISFROMME, m.ZMESSAGEDATE,
+                       {sender_case}
                 FROM ZWAMESSAGE m
+                {sender_joins}
                 WHERE m.ZCHATSESSION = ? AND m.ZMESSAGEDATE > ?
                   AND m.ZTEXT IS NOT NULL AND m.ZMESSAGEDATE IS NOT NULL
                 ORDER BY m.ZMESSAGEDATE ASC LIMIT ?
@@ -892,8 +928,10 @@ def analyze_whatsapp_db(db_path, year=None, end_year=None):
         else:
             # Last message: get a few messages BEFORE it in the same chat
             cursor.execute(f"""
-                SELECT m.ZTEXT, m.ZISFROMME, m.ZMESSAGEDATE
+                SELECT m.ZTEXT, m.ZISFROMME, m.ZMESSAGEDATE,
+                       {sender_case}
                 FROM ZWAMESSAGE m
+                {sender_joins}
                 WHERE m.ZCHATSESSION = ? AND m.ZMESSAGEDATE < ?
                   AND m.ZTEXT IS NOT NULL AND m.ZMESSAGEDATE IS NOT NULL
                 ORDER BY m.ZMESSAGEDATE DESC LIMIT ?
@@ -907,6 +945,7 @@ def analyze_whatsapp_db(db_path, year=None, end_year=None):
                 'text': cr[0][:100],
                 'from_me': cr[1] == 1,
                 'time': ctx_dt.strftime('%H:%M'),
+                'sender': cr[3] if is_group else None,
             })
 
         if order == 'DESC':
