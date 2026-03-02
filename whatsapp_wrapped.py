@@ -68,6 +68,12 @@ EMOJI_PATTERN = re.compile(
 # Apple Core Data timestamp starts from 2001-01-01 instead of Unix epoch (1970-01-01)
 APPLE_TIMESTAMP_OFFSET = 978307200
 
+# Minimum valid Apple timestamp: 2009-01-01 (WhatsApp launch year)
+# Any ZMESSAGEDATE below this is corrupted/invalid (e.g. epoch 0 → 1970)
+# Calculated as: unix_timestamp(2009-01-01) - APPLE_TIMESTAMP_OFFSET
+#              = 1230768000 - 978307200 = 252460800
+MIN_VALID_APPLE_TIMESTAMP = 252460800
+
 # iOS backup locations by platform
 BACKUP_LOCATIONS = {
     'darwin': '~/Library/Application Support/MobileSync/Backup',
@@ -380,16 +386,18 @@ def analyze_whatsapp_db(db_path, year=None, end_year=None):
         end_year = None
 
     # Set up date filtering
+    # Always exclude messages with unrealistic timestamps (before WhatsApp existed)
+    validity_filter = f"AND ZMESSAGEDATE >= {MIN_VALID_APPLE_TIMESTAMP}"
     if year and year > 0:
         start_ts, _ = get_year_timestamp_bounds(year)
         _, end_ts = get_year_timestamp_bounds(end_year if end_year else year)
-        date_filter = f"AND ZMESSAGEDATE >= {start_ts} AND ZMESSAGEDATE <= {end_ts}"
+        date_filter = f"{validity_filter} AND ZMESSAGEDATE >= {start_ts} AND ZMESSAGEDATE <= {end_ts}"
         if end_year:
             log(f"🗓️  Filtering for years: {year}–{end_year}\n", verbose_only=True)
         else:
             log(f"🗓️  Filtering for year: {year}\n", verbose_only=True)
     else:
-        date_filter = ""
+        date_filter = validity_filter
         year = None  # Ensure None for "all years"
         end_year = None
 
@@ -400,11 +408,11 @@ def analyze_whatsapp_db(db_path, year=None, end_year=None):
     total_messages = cursor.fetchone()[0]
     log(f"✓ Total messages: {total_messages:,}", verbose_only=True)
 
-    # Get date range
-    cursor.execute("""
+    # Get date range (excluding invalid timestamps)
+    cursor.execute(f"""
         SELECT MIN(ZMESSAGEDATE), MAX(ZMESSAGEDATE)
         FROM ZWAMESSAGE
-        WHERE ZMESSAGEDATE IS NOT NULL
+        WHERE ZMESSAGEDATE IS NOT NULL {validity_filter}
     """)
     min_date, max_date = cursor.fetchone()
     min_dt = apple_timestamp_to_datetime(min_date)
