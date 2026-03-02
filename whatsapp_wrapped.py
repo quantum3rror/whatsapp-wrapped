@@ -936,6 +936,7 @@ def analyze_whatsapp_db(db_path, year=None, end_year=None):
     cursor.execute(f"""
         WITH msg_gaps AS (
             SELECT cs.ZPARTNERNAME,
+                m.ZCHATSESSION,
                 m.ZMESSAGEDATE,
                 LAG(m.ZMESSAGEDATE) OVER (PARTITION BY m.ZCHATSESSION ORDER BY m.ZMESSAGEDATE) as prev_date
             FROM ZWAMESSAGE m
@@ -943,23 +944,77 @@ def analyze_whatsapp_db(db_path, year=None, end_year=None):
             WHERE m.ZMESSAGEDATE IS NOT NULL AND cs.ZPARTNERNAME IS NOT NULL
               AND cs.ZSESSIONTYPE = 0 {date_filter}
         )
-        SELECT ZPARTNERNAME, MAX(ZMESSAGEDATE - prev_date) as gap_seconds
+        SELECT ZPARTNERNAME, ZCHATSESSION,
+               (ZMESSAGEDATE - prev_date) as gap_seconds,
+               prev_date as gap_start_ts,
+               ZMESSAGEDATE as gap_end_ts
         FROM msg_gaps
         WHERE prev_date IS NOT NULL
-        GROUP BY ZPARTNERNAME
         ORDER BY gap_seconds DESC
         LIMIT 1
     """)
     gap_row = cursor.fetchone()
     longest_gap = None
     if gap_row:
-        gap_days = round(gap_row[1] / 86400, 1)
+        gap_chat_name = gap_row[0]
+        gap_chat_session = gap_row[1]
+        gap_seconds = gap_row[2]
+        gap_start_ts = gap_row[3]  # timestamp of last message BEFORE the gap
+        gap_end_ts = gap_row[4]    # timestamp of first message AFTER the gap
+        gap_days = round(gap_seconds / 86400, 1)
+
+        gap_start_dt = apple_timestamp_to_datetime(gap_start_ts)
+        gap_end_dt = apple_timestamp_to_datetime(gap_end_ts)
+
         longest_gap = {
-            'chat': gap_row[0],
-            'seconds': gap_row[1],
+            'chat': gap_chat_name,
+            'seconds': gap_seconds,
             'days': gap_days,
+            'gap_start_date': gap_start_dt.strftime('%Y-%m-%d'),
+            'gap_end_date': gap_end_dt.strftime('%Y-%m-%d'),
         }
-        log(f"  {longest_gap['chat']}: {gap_days} days", verbose_only=True)
+
+        # Fetch last messages BEFORE the gap (up to the gap_start_ts)
+        cursor.execute("""
+            SELECT m.ZTEXT, m.ZISFROMME, m.ZMESSAGEDATE
+            FROM ZWAMESSAGE m
+            WHERE m.ZCHATSESSION = ? AND m.ZMESSAGEDATE <= ?
+              AND m.ZTEXT IS NOT NULL AND m.ZMESSAGEDATE IS NOT NULL
+            ORDER BY m.ZMESSAGEDATE DESC LIMIT 3
+        """, (gap_chat_session, gap_start_ts))
+        before_rows = cursor.fetchall()
+        before_msgs = []
+        for row in reversed(before_rows):  # chronological order
+            dt = apple_timestamp_to_datetime(row[2])
+            before_msgs.append({
+                'text': row[0][:100],
+                'from_me': row[1] == 1,
+                'time': dt.strftime('%H:%M'),
+                'date': dt.strftime('%d.%m.%Y'),
+            })
+        longest_gap['before_messages'] = before_msgs
+
+        # Fetch first messages AFTER the gap (from gap_end_ts onwards)
+        cursor.execute("""
+            SELECT m.ZTEXT, m.ZISFROMME, m.ZMESSAGEDATE
+            FROM ZWAMESSAGE m
+            WHERE m.ZCHATSESSION = ? AND m.ZMESSAGEDATE >= ?
+              AND m.ZTEXT IS NOT NULL AND m.ZMESSAGEDATE IS NOT NULL
+            ORDER BY m.ZMESSAGEDATE ASC LIMIT 3
+        """, (gap_chat_session, gap_end_ts))
+        after_rows = cursor.fetchall()
+        after_msgs = []
+        for row in after_rows:
+            dt = apple_timestamp_to_datetime(row[2])
+            after_msgs.append({
+                'text': row[0][:100],
+                'from_me': row[1] == 1,
+                'time': dt.strftime('%H:%M'),
+                'date': dt.strftime('%d.%m.%Y'),
+            })
+        longest_gap['after_messages'] = after_msgs
+
+        log(f"  {gap_chat_name}: {gap_days} days ({gap_start_dt.date()} → {gap_end_dt.date()})", verbose_only=True)
 
     # Prepare statistics for JSON output
     #  year_display: used by the HTML template for the title

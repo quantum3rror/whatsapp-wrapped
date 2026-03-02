@@ -369,8 +369,13 @@
         scrollbar-color: var(--card-bg) transparent;
         margin-top: 0.5rem;
       }
-      .top10-scroll::-webkit-scrollbar { width: 4px; }
-      .top10-scroll::-webkit-scrollbar-thumb { background: var(--card-bg); border-radius: 2px; }
+      .top10-scroll::-webkit-scrollbar {
+        width: 4px;
+      }
+      .top10-scroll::-webkit-scrollbar-thumb {
+        background: var(--card-bg);
+        border-radius: 2px;
+      }
 
       /* Top 10 Table Styles */
       .top10-table {
@@ -579,6 +584,38 @@
         color: var(--secondary-color);
         text-align: right;
         margin-top: 0.2rem;
+      }
+
+      /* Gap separator for Funkpause slide */
+      .gap-separator {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        margin: 0.6rem 0;
+        width: 100%;
+      }
+
+      .gap-separator .line {
+        flex: 1;
+        height: 1px;
+        background: var(--secondary-color);
+        opacity: 0.4;
+      }
+
+      .gap-separator .label {
+        font-size: 0.75rem;
+        color: var(--accent-color);
+        white-space: nowrap;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+      }
+
+      .gap-date-label {
+        font-size: 0.65rem;
+        color: var(--secondary-color);
+        text-align: center;
+        margin-bottom: 0.2rem;
+        opacity: 0.7;
       }
     </style>
   </head>
@@ -1181,15 +1218,42 @@
         <h2 style="color: var(--accent-color); margin-top: 0.5rem">
           {{ longest_gap.chat }}
         </h2>
-        <p
-          style="
-            color: var(--secondary-color);
-            font-size: 0.9rem;
-            margin-top: 1rem;
-          "
-        >
-          … but then you started talking again 😄
-        </p>
+
+        {% if longest_gap.before_messages or longest_gap.after_messages %}
+        <div class="chat-thread" style="margin-top: 1.2rem">
+          {% if longest_gap.before_messages %}
+          <div class="gap-date-label">
+            {{ longest_gap.before_messages[0].date }}
+          </div>
+          {% for msg in longest_gap.before_messages %}
+          <div
+            class="message-bubble context {{ 'sent' if msg.from_me else 'received' }}"
+          >
+            {{ msg.text }}
+            <div class="message-meta">{{ msg.time }}</div>
+          </div>
+          {% endfor %} {% endif %}
+
+          <div class="gap-separator">
+            <div class="line"></div>
+            <div class="label">⏸️ {{ longest_gap.days }} days</div>
+            <div class="line"></div>
+          </div>
+
+          {% if longest_gap.after_messages %}
+          <div class="gap-date-label">
+            {{ longest_gap.after_messages[0].date }}
+          </div>
+          {% for msg in longest_gap.after_messages %}
+          <div
+            class="message-bubble context {{ 'sent' if msg.from_me else 'received' }}"
+          >
+            {{ msg.text }}
+            <div class="message-meta">{{ msg.time }}</div>
+          </div>
+          {% endfor %} {% endif %}
+        </div>
+        {% endif %}
       </section>
       {% endif %}
 
@@ -1211,7 +1275,9 @@
             {% for item in top_emojis[:10] %}
             <tr>
               <td>{{ loop.index }}</td>
-              <td style="font-size: clamp(1rem, 3vh, 1.6rem)">{{ item.emoji }}</td>
+              <td style="font-size: clamp(1rem, 3vh, 1.6rem)">
+                {{ item.emoji }}
+              </td>
               <td>{{ '{:,}'.format(item.count) }}</td>
             </tr>
             {% endfor %}
