@@ -127,7 +127,11 @@ python whatsapp_wrapped.py --db /path/to/ChatStorage.sqlite --output my_stats.js
 
 ### Building with PyInstaller
 
-**GUI app (macOS `.app` bundle)**
+> **Note:** PyInstaller builds must run on the target OS — you cannot cross-compile. Build on macOS for macOS, and on Windows for Windows.
+
+#### macOS
+
+**GUI app (`.app` bundle)**
 ```bash
 pyinstaller WhatsAppWrapped-GUI.spec
 # Output: dist/WhatsApp Wrapped.app
@@ -139,10 +143,32 @@ pyinstaller WhatsAppWrapped.spec
 # Output: dist/WhatsAppWrapped
 ```
 
-**macOS ad-hoc codesign** (silences Gatekeeper for local testing)
+**Ad-hoc codesign** (silences Gatekeeper for local testing)
 ```bash
 codesign --force --deep --sign - "dist/WhatsApp Wrapped.app"
 ```
+
+#### Windows
+
+Install dependencies first (run in PowerShell or Command Prompt):
+```powershell
+pip install -r requirements.txt
+pip install pyinstaller pywebview
+```
+
+**GUI app (`.exe` + supporting files)**
+```powershell
+pyinstaller WhatsAppWrapped-GUI.spec
+# Output: dist\WhatsApp Wrapped\WhatsApp Wrapped.exe
+```
+
+**CLI binary (single `.exe`)**
+```powershell
+pyinstaller WhatsAppWrapped.spec
+# Output: dist\WhatsAppWrapped.exe
+```
+
+> **Windows WebView2 requirement:** The GUI app uses `pywebview` with the Edge/WebView2 backend. WebView2 is pre-installed on Windows 10 (1803+) and Windows 11. If it's missing, download the [WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/) from Microsoft.
 
 ## Privacy & Security
 
