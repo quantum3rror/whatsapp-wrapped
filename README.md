@@ -5,6 +5,9 @@
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/lukasss123/whatsapp-wrapped)
 
 Generate Spotify Wrapped-style statistics for your WhatsApp conversations!
+This project was heavily inspired by Josh and his [video](https://www.youtube.com/watch?v=UhIxXC_5zmI) — his code is available [here](https://github.com/vuciv/imessage-wrapped).
+This is a more polished version that opens in a dedicated window instead of outputting to an HTML file.
+You simply need a backup from your iPhone on your Mac or Windows PC and can then generate your personal WhatsApp Wrapped with the provided application.
 
 ## Prerequisites
 
@@ -218,7 +221,3 @@ MIT License — feel free to use and modify!
 ## Contributing
 
 This is an open source project. Contributions welcome!
-
-## Acknowledgments
-
-Inspired by [imessage-wrapped](https://github.com/vuciv/imessage-wrapped) — a project that brings the Wrapped experience to iMessage conversations.
