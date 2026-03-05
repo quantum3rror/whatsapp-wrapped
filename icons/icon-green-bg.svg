@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+	 width="800px" height="800px" viewBox="-3 -3 36.667 36.667"
+	 xml:space="preserve">
+<g>
+	<!-- Fully opaque green square background -->
+	<rect x="-3" y="-3" width="36.667" height="36.667" fill="#25D366"/>
+
+	<!-- White speech bubble ring (evenodd = outer filled white, inner hole shows green bg) -->
+	<path fill="#ffffff" fill-rule="evenodd" d="M30.667,14.939c0,8.25-6.74,14.938-15.056,14.938c-2.639,0-5.118-0.675-7.276-1.857L0,30.667l2.717-8.017
+		c-1.37-2.25-2.159-4.892-2.159-7.712C0.559,6.688,7.297,0,15.613,0C23.928,0.002,30.667,6.689,30.667,14.939z M15.61,2.382
+		c-6.979,0-12.656,5.634-12.656,12.56c0,2.748,0.896,5.292,2.411,7.362l-1.58,4.663l4.862-1.545c2,1.312,4.393,2.076,6.963,2.076
+		c6.979,0,12.658-5.633,12.658-12.559C28.27,8.016,22.59,2.382,15.61,2.382z"/>
+
+	<!-- White bar chart bars (visible against green inner area) -->
+	<rect fill="#ffffff" x="9.0"  y="17.0" width="2.4" height="6.0"  rx="0.4"/>
+	<rect fill="#ffffff" x="12.4" y="14.2" width="2.4" height="8.8"  rx="0.4"/>
+	<rect fill="#ffffff" x="15.8" y="11.0" width="2.4" height="12.0" rx="0.4"/>
+	<rect fill="#ffffff" x="19.2" y="9.0"  width="2.4" height="14.0" rx="0.4"/>
+</g>
+</svg>

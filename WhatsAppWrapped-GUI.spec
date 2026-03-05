@@ -64,6 +64,6 @@ coll = COLLECT(
 app = BUNDLE(
     coll,
     name='WhatsApp Wrapped.app',
-    icon=None,
+    icon='icons/icon.icns',
     bundle_identifier='com.whatsappwrapped.gui',
 )
