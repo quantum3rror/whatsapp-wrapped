@@ -74,6 +74,7 @@ Want to see what it looks like without running it? Check out the [demo output](e
 ## What You'll Get
 
 **Statistics included:**
+
 - **Total messages** sent and received
 - **Top 3 individual chats** — your most active 1-on-1 conversations
 - **Top 3 group chats** — your most active group conversations

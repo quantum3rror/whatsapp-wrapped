@@ -15,6 +15,8 @@ Permission Requirements (macOS):
 Usage Examples:
     python whatsapp_wrapped.py --list-backups              # List all backups
     python whatsapp_wrapped.py --year 2025                 # Analyze 2025 (quiet mode)
+    python whatsapp_wrapped.py --year 2023-2025            # Analyze 2023 to 2025
+    python whatsapp_wrapped.py --year 0                    # Analyze all-time (quiet mode)
     python whatsapp_wrapped.py --verbose                   # Show detailed progress
     python whatsapp_wrapped.py --db /path/to/ChatStorage.sqlite  # Use specific DB
 """
@@ -348,15 +350,54 @@ def apple_timestamp_to_datetime(apple_timestamp):
         return _apple_timestamp_to_datetime_windows(apple_timestamp)
     return _apple_timestamp_to_datetime_unix(apple_timestamp)
 
-def get_year_timestamp_bounds(year):
-    """Get Apple timestamp bounds for a given year"""
-    # Start of year (Jan 1, 00:00:00)
+def parse_year_arg(value):
+    """Parse --year argument: single year (2025), range (2023-2025), or 0 (all-time).
+
+    Returns (start_year, end_year) tuple. Both None means all-time.
+    For a single year, start_year == end_year.
+    """
+    value = str(value).strip()
+    if value == '0':
+        return (None, None)
+    if '-' in value:
+        parts = value.split('-', 1)
+        try:
+            start = int(parts[0])
+            end = int(parts[1])
+        except ValueError:
+            raise argparse.ArgumentTypeError(
+                f"Invalid year range '{value}'. Use YYYY or YYYY-YYYY (e.g., 2025 or 2023-2025)")
+        if start > end:
+            raise argparse.ArgumentTypeError(
+                f"Invalid range: start year {start} is after end year {end}")
+        if start < 2009:
+            raise argparse.ArgumentTypeError(
+                f"Invalid start year {start}. WhatsApp was released in 2009.")
+        return (start, end)
+    try:
+        year = int(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            f"Invalid year '{value}'. Use YYYY, YYYY-YYYY, or 0 for all-time.")
+    if year < 0:
+        raise argparse.ArgumentTypeError(f"Year must be >= 0, got {year}")
+    if year > 0 and year < 2009:
+        raise argparse.ArgumentTypeError(
+            f"Invalid year {year}. WhatsApp was released in 2009.")
+    return (year, year)
+
+def get_year_timestamp_bounds(year, end_year=None):
+    """Get Apple timestamp bounds for a given year or year range"""
+    if end_year is None:
+        end_year = year
+
+    # Start of start_year (Jan 1, 00:00:00)
     start_dt = datetime(year, 1, 1, 0, 0, 0)
     start_unix = int(start_dt.timestamp())
     start_apple = start_unix - APPLE_TIMESTAMP_OFFSET
 
-    # End of year (Dec 31, 23:59:59)
-    end_dt = datetime(year, 12, 31, 23, 59, 59)
+    # End of end_year (Dec 31, 23:59:59)
+    end_dt = datetime(end_year, 12, 31, 23, 59, 59)
     end_unix = int(end_dt.timestamp())
     end_apple = end_unix - APPLE_TIMESTAMP_OFFSET
 
@@ -756,11 +797,11 @@ def analyze_whatsapp_db(db_path, year=None, end_year=None):
                 CAST(strftime('%m', datetime(m.ZMESSAGEDATE + 978307200, 'unixepoch')) AS INTEGER) as month"""
         timeline_group = "GROUP BY month ORDER BY month"
 
-    def build_timeline_months(rows, is_lifetime_mode):
+    def build_timeline_months(rows, is_multi_year_mode):
         result = []
         for yr, m, c in rows:
             entry = {"month": m, "count": c}
-            if is_lifetime_mode:
+            if is_multi_year_mode:
                 entry["year"] = yr
                 entry["label"] = f"{month_names[m-1]} {yr}"
             else:
@@ -1127,7 +1168,14 @@ def generate_html_wrapped(stats, output_file=None):
         template_content = f.read()
 
     # Prepare data for template
-    year_display = stats['year'] if stats.get('year') else 'All Time'
+    year = stats.get('year')
+    year_end = stats.get('year_end')
+    if year and year_end and year != year_end:
+        year_display = f"{year}–{year_end}"
+    elif year:
+        year_display = str(year)
+    else:
+        year_display = 'All Time'
 
     # Handle missing or empty top_individual_chats
     top_individual_chats = stats.get('top_individual_chats', [])
@@ -1189,12 +1237,13 @@ def main():
         epilog='Examples:\n'
                '  python whatsapp_wrapped.py --list-backups\n'
                '  python whatsapp_wrapped.py --year 2025\n'
+               '  python whatsapp_wrapped.py --year 2023-2025\n'
                '  python whatsapp_wrapped.py --db /path/to/ChatStorage.sqlite',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument('--db', type=str, help='Path to ChatStorage.sqlite file (if already extracted)')
     parser.add_argument('--output', type=str, default='whatsapp_wrapped_stats.json', help='Output JSON file')
-    parser.add_argument('--year', type=int, default=2025, help='Year to analyze (default: 2025, use 0 for all years)')
+    parser.add_argument('--year', type=str, default='2025', help='Year or range to analyze (e.g., 2025, 2023-2025, or 0 for all years)')
     parser.add_argument('--list-backups', action='store_true', help='List all discovered iOS backups')
     parser.add_argument('--verbose', '-v', action='store_true', help='Show detailed progress and statistics')
     args = parser.parse_args()
@@ -1210,6 +1259,13 @@ def main():
     # Handle --list-backups flag
     if args.list_backups:
         list_backups()
+        return
+
+    # Parse year argument
+    try:
+        start_year, end_year = parse_year_arg(args.year)
+    except argparse.ArgumentTypeError as e:
+        log(f"\n\u274c {e}", verbose_only=False)
         return
 
     # If user provided database path directly
@@ -1282,7 +1338,7 @@ def main():
     log("=" * 50, verbose_only=True)
 
     try:
-        stats = analyze_whatsapp_db(db_path, year=args.year)
+        stats = analyze_whatsapp_db(db_path, year=start_year, end_year=end_year)
     except sqlite3.DatabaseError as e:
         log(f"\n❌ Database error: {e}", verbose_only=False)
         log("\n💡 The file may be corrupted or not a valid WhatsApp database.", verbose_only=False)
@@ -1307,7 +1363,12 @@ def main():
         html_generated = False
 
     log("\n" + "=" * 50, verbose_only=True)
-    year_msg = f" for {args.year}" if args.year and args.year > 0 else ""
+    if start_year and end_year and start_year != end_year:
+        year_msg = f" for {start_year}–{end_year}"
+    elif start_year and start_year > 0:
+        year_msg = f" for {start_year}"
+    else:
+        year_msg = ""
     log(f"✅ Analysis complete{year_msg}!", verbose_only=False)
     log(f"📊 Statistics saved to: {args.output}", verbose_only=False)
     if html_generated:
