@@ -21,7 +21,7 @@ from io import BytesIO
 from pathlib import Path
 
 try:
-    from PIL import Image
+    from PIL import Image, ImageDraw
 except ImportError:
     sys.exit("Pillow not found.  Run: pip install Pillow")
 
@@ -50,7 +50,7 @@ ICONSET_MAP: dict[int, list[str]] = {
     1024: ["icon_512x512@2x.png"],
 }
 
-ICO_SIZES = [(16, 16), (32, 32), (48, 48), (256, 256)]
+ICO_SIZES = [(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (256, 256)]
 
 
 def render_master() -> Image.Image:
@@ -101,9 +101,33 @@ def build_icns(master: Image.Image):
     print("  saved icon.icns")
 
 
+def round_corners(img: Image.Image, radius_pct: float = 0.22) -> Image.Image:
+    """Apply a rounded corner mask — matches Apple's ~22% corner radius."""
+    radius = int(img.width * radius_pct)
+    mask = Image.new("L", img.size, 0)
+    ImageDraw.Draw(mask).rounded_rectangle(
+        [(0, 0), (img.width - 1, img.height - 1)], radius=radius, fill=255
+    )
+    result = img.copy().convert("RGBA")
+    result.putalpha(mask)
+    return result
+
+
 def build_ico(master: Image.Image):
-    master.save(ICONS_DIR / "icon.ico", format="ICO", sizes=ICO_SIZES)
-    print(f"  saved icon.ico  ({', '.join(f'{w}×{h}' for w, h in ICO_SIZES)})")
+    """Build icon.ico — largest size first so viewers and Windows pick the best size."""
+    ordered = sorted(ICO_SIZES, reverse=True)   # 256 → 48 → 32 → 16
+    images = []
+    for size in ordered:
+        img = master.resize(size, Image.LANCZOS)
+        if size[0] >= 24:                        # only round at sizes where it looks good
+            img = round_corners(img)
+        images.append(img)
+    images[0].save(
+        ICONS_DIR / "icon.ico",
+        format="ICO",
+        append_images=images[1:],
+    )
+    print(f"  saved icon.ico  ({', '.join(f'{w}×{h}' for w, h in ordered)})")
 
 
 if __name__ == "__main__":
