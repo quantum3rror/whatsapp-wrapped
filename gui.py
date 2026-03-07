@@ -32,6 +32,22 @@ _spec = importlib.util.spec_from_file_location(
 _mod = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_mod)
 
+# Load the app icon SVG and strip XML/DOCTYPE headers for inline embedding
+_icon_svg = ''
+_icon_path = _base / 'icons' / 'icon-green-bg.svg'
+if _icon_path.exists():
+    import re as _re
+    _raw = _icon_path.read_text(encoding='utf-8')
+    _raw = _re.sub(r'<\?xml[^?]*\?>', '', _raw)
+    _raw = _re.sub(r'<!DOCTYPE[^>]*>', '', _raw)
+    # inject class and fixed size so it slots into the logo area
+    _icon_svg = _re.sub(
+        r'<svg ',
+        '<svg class="logo-icon" ',
+        _raw.strip(),
+        count=1,
+    )
+
 find_ios_backups      = _mod.find_ios_backups
 find_whatsapp_db      = _mod.find_whatsapp_db
 analyze_whatsapp_db   = _mod.analyze_whatsapp_db
@@ -88,14 +104,12 @@ LANDING_HTML = """<!DOCTYPE html>
     margin-bottom: 32px;
   }
   .logo-icon {
-    width: 64px; height: 64px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    border-radius: 18px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 32px;
-    margin-bottom: 14px;
+    display: block;
+    margin: 0 auto 14px;
+    width: 72px;
+    height: 72px;
+    border-radius: 22%;
+    overflow: hidden;
   }
   .logo h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
   .logo p  { color: var(--muted); font-size: 14px; margin-top: 4px; }
@@ -238,7 +252,7 @@ LANDING_HTML = """<!DOCTYPE html>
 <body>
 <div class="card">
   <div class="logo">
-    <div class="logo-icon">💬</div>
+    __ICON_SVG__
     <h1>WhatsApp Wrapped</h1>
     <p>Your year in messages</p>
   </div>
@@ -417,6 +431,7 @@ document.addEventListener('keydown', e => {
 </body>
 </html>
 """
+LANDING_HTML = LANDING_HTML.replace('__ICON_SVG__', _icon_svg)
 
 # ---------------------------------------------------------------------------
 # Python API

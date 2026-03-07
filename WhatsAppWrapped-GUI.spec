@@ -13,6 +13,7 @@ a = Analysis(
         ('whatsapp_wrapped.py', '.'),
         ('whatsapp_wrapped/templates/wrapped.html', 'whatsapp_wrapped/templates'),
         ('whatsapp_wrapped/analytics', 'whatsapp_wrapped/analytics'),
+        ('icons/icon-green-bg.svg', 'icons'),
     ],
     hiddenimports=[
         'sqlite3',
