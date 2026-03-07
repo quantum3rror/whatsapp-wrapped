@@ -50,6 +50,9 @@ ChatStorage.sqlite
 .AppleDouble
 .LSOverride
 
+# PyInstaller
+*.pkg
+
 # Backups
 *.bak
 /db
