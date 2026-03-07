@@ -58,7 +58,7 @@ generate_html_wrapped = _mod.generate_html_wrapped
 # Landing page HTML
 # ---------------------------------------------------------------------------
 
-LANDING_HTML = """<!DOCTYPE html>
+LANDING_HTML = r"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
