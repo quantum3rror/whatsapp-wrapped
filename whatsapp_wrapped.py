@@ -70,6 +70,12 @@ EMOJI_PATTERN = re.compile(
 # Apple Core Data timestamp starts from 2001-01-01 instead of Unix epoch (1970-01-01)
 APPLE_TIMESTAMP_OFFSET = 978307200
 
+# Minimum valid Apple timestamp: 2009-01-01 (WhatsApp launch year)
+# Any ZMESSAGEDATE below this is corrupted/invalid (e.g. epoch 0 → 1970)
+# Calculated as: unix_timestamp(2009-01-01) - APPLE_TIMESTAMP_OFFSET
+#              = 1230768000 - 978307200 = 252460800
+MIN_VALID_APPLE_TIMESTAMP = 252460800
+
 # iOS backup locations by platform
 BACKUP_LOCATIONS = {
     'darwin': '~/Library/Application Support/MobileSync/Backup',
@@ -398,28 +404,41 @@ def get_year_timestamp_bounds(year, end_year=None):
     return start_apple, end_apple
 
 def analyze_whatsapp_db(db_path, year=None, end_year=None):
-    """Analyze WhatsApp database and extract statistics
+    """Analyze WhatsApp database and extract statistics.
 
     Args:
-        db_path: Path to the SQLite database
-        year: Start year (or single year). None/0 = all-time.
-        end_year: End year for range queries. None = same as year.
+        db_path: Path to the WhatsApp SQLite database.
+        year: Single year to filter, or start of a range. 0/None = all time.
+        end_year: End year for a range (inclusive). If set, filters from
+                  Jan 1 of *year* through Dec 31 of *end_year*.
     """
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
+    # Normalise year / end_year
+    if year is not None and year <= 0:
+        year = None
+    if end_year is not None and end_year <= 0:
+        end_year = None
+    if end_year is not None and year is not None and end_year < year:
+        year, end_year = end_year, year  # swap if reversed
+    # If start == end, collapse to single-year mode
+    if end_year is not None and end_year == year:
+        end_year = None
+
     # Set up date filtering
+    # Always exclude messages with unrealistic timestamps (before WhatsApp existed)
+    validity_filter = f"AND ZMESSAGEDATE >= {MIN_VALID_APPLE_TIMESTAMP}"
     if year and year > 0:
-        if end_year is None:
-            end_year = year
-        start_ts, end_ts = get_year_timestamp_bounds(year, end_year)
-        date_filter = f"AND ZMESSAGEDATE >= {start_ts} AND ZMESSAGEDATE <= {end_ts}"
-        if year == end_year:
-            log(f"🗓️  Filtering for year: {year}\n", verbose_only=True)
+        start_ts, _ = get_year_timestamp_bounds(year)
+        _, end_ts = get_year_timestamp_bounds(end_year if end_year else year)
+        date_filter = f"{validity_filter} AND ZMESSAGEDATE >= {start_ts} AND ZMESSAGEDATE <= {end_ts}"
+        if end_year:
+            log(f"🗓️  Filtering for years: {year}–{end_year}\n", verbose_only=True)
         else:
-            log(f"🗓️  Filtering for range: {year}–{end_year}\n", verbose_only=True)
+            log(f"🗓️  Filtering for year: {year}\n", verbose_only=True)
     else:
-        date_filter = ""
+        date_filter = validity_filter
         year = None  # Ensure None for "all years"
         end_year = None
 
@@ -430,11 +449,11 @@ def analyze_whatsapp_db(db_path, year=None, end_year=None):
     total_messages = cursor.fetchone()[0]
     log(f"✓ Total messages: {total_messages:,}", verbose_only=True)
 
-    # Get date range
-    cursor.execute("""
+    # Get date range (excluding invalid timestamps)
+    cursor.execute(f"""
         SELECT MIN(ZMESSAGEDATE), MAX(ZMESSAGEDATE)
         FROM ZWAMESSAGE
-        WHERE ZMESSAGEDATE IS NOT NULL
+        WHERE ZMESSAGEDATE IS NOT NULL {validity_filter}
     """)
     min_date, max_date = cursor.fetchone()
     min_dt = apple_timestamp_to_datetime(min_date)
@@ -551,8 +570,8 @@ def analyze_whatsapp_db(db_path, year=None, end_year=None):
     # Calculate days in analysis period
     if year and year > 0:
         period_start = datetime(year, 1, 1)
-        period_end_year = end_year if end_year else year
-        period_end = min(datetime(period_end_year, 12, 31), datetime.now())
+        last_year = end_year if end_year else year
+        period_end = min(datetime(last_year, 12, 31), datetime.now())
         days_in_period = max((period_end - period_start).days, 1)
     elif min_dt and max_dt:
         days_in_period = max((max_dt - min_dt).days, 1)
@@ -764,11 +783,11 @@ def analyze_whatsapp_db(db_path, year=None, end_year=None):
     # Chat timeline for top 1 person and top 1 group (messages per month)
     log("\n📈 Chat timelines...", verbose_only=True)
     chat_timelines = {}
-    is_multi_year = (year and end_year and year != end_year) or not (year and year > 0)
+    is_range = end_year is not None  # multi-year range
     is_lifetime = not (year and year > 0)
 
-    if is_multi_year:
-        # Multi-year or lifetime mode: group by year+month for full history
+    if is_lifetime or is_range:
+        # Lifetime / multi-year mode: group by year+month for full history
         timeline_select = """CAST(strftime('%Y', datetime(m.ZMESSAGEDATE + 978307200, 'unixepoch')) AS INTEGER) as yr,
                 CAST(strftime('%m', datetime(m.ZMESSAGEDATE + 978307200, 'unixepoch')) AS INTEGER) as month"""
         timeline_group = "GROUP BY yr, month ORDER BY yr, month"
@@ -800,11 +819,11 @@ def analyze_whatsapp_db(db_path, year=None, end_year=None):
             WHERE cs.ZPARTNERNAME = ? AND m.ZMESSAGEDATE IS NOT NULL {date_filter}
             {timeline_group}
         """, (top1_name,))
-        months_data = build_timeline_months(cursor.fetchall(), is_multi_year)
+        months_data = build_timeline_months(cursor.fetchall(), is_lifetime or is_range)
         chat_timelines['top_chat'] = {
             'name': top1_name,
             'months': months_data,
-            'is_lifetime': is_multi_year
+            'is_lifetime': is_lifetime or is_range
         }
         log(f"  {top1_name}: {sum(x['count'] for x in months_data):,} msgs over {len(months_data)} months", verbose_only=True)
 
@@ -817,11 +836,11 @@ def analyze_whatsapp_db(db_path, year=None, end_year=None):
             WHERE cs.ZPARTNERNAME = ? AND m.ZMESSAGEDATE IS NOT NULL {date_filter}
             {timeline_group}
         """, (top1_group,))
-        months_data = build_timeline_months(cursor.fetchall(), is_multi_year)
+        months_data = build_timeline_months(cursor.fetchall(), is_lifetime or is_range)
         chat_timelines['top_group'] = {
             'name': top1_group,
             'months': months_data,
-            'is_lifetime': is_multi_year
+            'is_lifetime': is_lifetime or is_range
         }
         log(f"  {top1_group}: {sum(x['count'] for x in months_data):,} msgs over {len(months_data)} months", verbose_only=True)
 
@@ -873,16 +892,47 @@ def analyze_whatsapp_db(db_path, year=None, end_year=None):
 
     def fetch_message_with_context(cursor, date_filter, order, from_me_filter=None, context_count=3):
         """Fetch the first/last message and surrounding context from the same chat.
-        from_me_filter: None=any, 1=sent, 0=received"""
+        from_me_filter: None=any, 1=sent, 0=received
+        
+        For group chats, resolves sender names via multiple fallbacks:
+          1. ZWACHATSESSION.ZPARTNERNAME (contact name from individual chat)
+          2. ZWAPROFILEPUSHNAME.ZPUSHNAME (WhatsApp display name)
+          3. Phone number extracted from ZWAGROUPMEMBER.ZMEMBERJID
+        """
         from_me_clause = ""
         if from_me_filter is not None:
             from_me_clause = f"AND m.ZISFROMME = {from_me_filter}"
 
+        # sender_name resolution:
+        #   - ZISFROMME=1 → 'You'
+        #   - Match group member JID to an individual chat session for the saved contact name
+        #   - Fall back to ZWAPROFILEPUSHNAME (push/display name set by the user)
+        #   - Fall back to phone number from ZMEMBERJID (only for @s.whatsapp.net JIDs)
+        #   - Otherwise 'Unbekannt' (for @lid internal IDs, @bot, or truly unknown)
+        sender_case = """
+            CASE
+                WHEN m.ZISFROMME = 1 THEN 'You'
+                WHEN cs_contact.ZPARTNERNAME IS NOT NULL AND cs_contact.ZPARTNERNAME != '' THEN cs_contact.ZPARTNERNAME
+                WHEN ppn.ZPUSHNAME IS NOT NULL AND ppn.ZPUSHNAME != '' THEN ppn.ZPUSHNAME
+                WHEN gm.ZMEMBERJID LIKE '%@s.whatsapp.net' THEN REPLACE(gm.ZMEMBERJID, '@s.whatsapp.net', '')
+                ELSE 'Unbekannt'
+            END as sender_name
+        """
+
+        # Extra JOINs for sender name resolution in group chats
+        sender_joins = """
+            LEFT JOIN ZWAGROUPMEMBER gm ON m.ZGROUPMEMBER = gm.Z_PK
+            LEFT JOIN ZWACHATSESSION cs_contact ON cs_contact.ZCONTACTJID = gm.ZMEMBERJID AND cs_contact.ZSESSIONTYPE = 0
+            LEFT JOIN ZWAPROFILEPUSHNAME ppn ON ppn.ZJID = gm.ZMEMBERJID
+        """
+
         cursor.execute(f"""
             SELECT m.ZTEXT, cs.ZPARTNERNAME, m.ZISFROMME,
-                   m.ZMESSAGEDATE, m.ZCHATSESSION
+                   m.ZMESSAGEDATE, m.ZCHATSESSION, cs.ZSESSIONTYPE,
+                   {sender_case}
             FROM ZWAMESSAGE m
             JOIN ZWACHATSESSION cs ON m.ZCHATSESSION = cs.Z_PK
+            {sender_joins}
             WHERE m.ZTEXT IS NOT NULL AND m.ZMESSAGEDATE IS NOT NULL
               AND cs.ZPARTNERNAME IS NOT NULL {date_filter} {from_me_clause}
             ORDER BY m.ZMESSAGEDATE {order} LIMIT 1
@@ -891,12 +941,15 @@ def analyze_whatsapp_db(db_path, year=None, end_year=None):
         if not row:
             return None
         dt_obj = apple_timestamp_to_datetime(row[3])
+        is_group = row[5] == 1
         main_msg = {
             'text': row[0][:100],
             'chat': row[1],
             'from_me': row[2] == 1,
             'date': dt_obj.strftime('%Y-%m-%d'),
             'time': dt_obj.strftime('%H:%M'),
+            'is_group': is_group,
+            'sender': row[6] if is_group else None,
         }
         chat_session = row[4]
         msg_date = row[3]
@@ -905,8 +958,10 @@ def analyze_whatsapp_db(db_path, year=None, end_year=None):
         if order == 'ASC':
             # First message: get a few messages AFTER it in the same chat for context thread
             cursor.execute(f"""
-                SELECT m.ZTEXT, m.ZISFROMME, m.ZMESSAGEDATE
+                SELECT m.ZTEXT, m.ZISFROMME, m.ZMESSAGEDATE,
+                       {sender_case}
                 FROM ZWAMESSAGE m
+                {sender_joins}
                 WHERE m.ZCHATSESSION = ? AND m.ZMESSAGEDATE > ?
                   AND m.ZTEXT IS NOT NULL AND m.ZMESSAGEDATE IS NOT NULL
                 ORDER BY m.ZMESSAGEDATE ASC LIMIT ?
@@ -914,8 +969,10 @@ def analyze_whatsapp_db(db_path, year=None, end_year=None):
         else:
             # Last message: get a few messages BEFORE it in the same chat
             cursor.execute(f"""
-                SELECT m.ZTEXT, m.ZISFROMME, m.ZMESSAGEDATE
+                SELECT m.ZTEXT, m.ZISFROMME, m.ZMESSAGEDATE,
+                       {sender_case}
                 FROM ZWAMESSAGE m
+                {sender_joins}
                 WHERE m.ZCHATSESSION = ? AND m.ZMESSAGEDATE < ?
                   AND m.ZTEXT IS NOT NULL AND m.ZMESSAGEDATE IS NOT NULL
                 ORDER BY m.ZMESSAGEDATE DESC LIMIT ?
@@ -929,6 +986,7 @@ def analyze_whatsapp_db(db_path, year=None, end_year=None):
                 'text': cr[0][:100],
                 'from_me': cr[1] == 1,
                 'time': ctx_dt.strftime('%H:%M'),
+                'sender': cr[3] if is_group else None,
             })
 
         if order == 'DESC':
@@ -958,6 +1016,7 @@ def analyze_whatsapp_db(db_path, year=None, end_year=None):
     cursor.execute(f"""
         WITH msg_gaps AS (
             SELECT cs.ZPARTNERNAME,
+                m.ZCHATSESSION,
                 m.ZMESSAGEDATE,
                 LAG(m.ZMESSAGEDATE) OVER (PARTITION BY m.ZCHATSESSION ORDER BY m.ZMESSAGEDATE) as prev_date
             FROM ZWAMESSAGE m
@@ -965,28 +1024,89 @@ def analyze_whatsapp_db(db_path, year=None, end_year=None):
             WHERE m.ZMESSAGEDATE IS NOT NULL AND cs.ZPARTNERNAME IS NOT NULL
               AND cs.ZSESSIONTYPE = 0 {date_filter}
         )
-        SELECT ZPARTNERNAME, MAX(ZMESSAGEDATE - prev_date) as gap_seconds
+        SELECT ZPARTNERNAME, ZCHATSESSION,
+               (ZMESSAGEDATE - prev_date) as gap_seconds,
+               prev_date as gap_start_ts,
+               ZMESSAGEDATE as gap_end_ts
         FROM msg_gaps
         WHERE prev_date IS NOT NULL
-        GROUP BY ZPARTNERNAME
         ORDER BY gap_seconds DESC
         LIMIT 1
     """)
     gap_row = cursor.fetchone()
     longest_gap = None
     if gap_row:
-        gap_days = round(gap_row[1] / 86400, 1)
+        gap_chat_name = gap_row[0]
+        gap_chat_session = gap_row[1]
+        gap_seconds = gap_row[2]
+        gap_start_ts = gap_row[3]  # timestamp of last message BEFORE the gap
+        gap_end_ts = gap_row[4]    # timestamp of first message AFTER the gap
+        gap_days = round(gap_seconds / 86400, 1)
+
+        gap_start_dt = apple_timestamp_to_datetime(gap_start_ts)
+        gap_end_dt = apple_timestamp_to_datetime(gap_end_ts)
+
         longest_gap = {
-            'chat': gap_row[0],
-            'seconds': gap_row[1],
+            'chat': gap_chat_name,
+            'seconds': gap_seconds,
             'days': gap_days,
+            'gap_start_date': gap_start_dt.strftime('%Y-%m-%d'),
+            'gap_end_date': gap_end_dt.strftime('%Y-%m-%d'),
         }
-        log(f"  {longest_gap['chat']}: {gap_days} days", verbose_only=True)
+
+        # Fetch last messages BEFORE the gap (up to the gap_start_ts)
+        cursor.execute("""
+            SELECT m.ZTEXT, m.ZISFROMME, m.ZMESSAGEDATE
+            FROM ZWAMESSAGE m
+            WHERE m.ZCHATSESSION = ? AND m.ZMESSAGEDATE <= ?
+              AND m.ZTEXT IS NOT NULL AND m.ZMESSAGEDATE IS NOT NULL
+            ORDER BY m.ZMESSAGEDATE DESC LIMIT 3
+        """, (gap_chat_session, gap_start_ts))
+        before_rows = cursor.fetchall()
+        before_msgs = []
+        for row in reversed(before_rows):  # chronological order
+            dt = apple_timestamp_to_datetime(row[2])
+            before_msgs.append({
+                'text': row[0][:100],
+                'from_me': row[1] == 1,
+                'time': dt.strftime('%H:%M'),
+                'date': dt.strftime('%d.%m.%Y'),
+            })
+        longest_gap['before_messages'] = before_msgs
+
+        # Fetch first messages AFTER the gap (from gap_end_ts onwards)
+        cursor.execute("""
+            SELECT m.ZTEXT, m.ZISFROMME, m.ZMESSAGEDATE
+            FROM ZWAMESSAGE m
+            WHERE m.ZCHATSESSION = ? AND m.ZMESSAGEDATE >= ?
+              AND m.ZTEXT IS NOT NULL AND m.ZMESSAGEDATE IS NOT NULL
+            ORDER BY m.ZMESSAGEDATE ASC LIMIT 3
+        """, (gap_chat_session, gap_end_ts))
+        after_rows = cursor.fetchall()
+        after_msgs = []
+        for row in after_rows:
+            dt = apple_timestamp_to_datetime(row[2])
+            after_msgs.append({
+                'text': row[0][:100],
+                'from_me': row[1] == 1,
+                'time': dt.strftime('%H:%M'),
+                'date': dt.strftime('%d.%m.%Y'),
+            })
+        longest_gap['after_messages'] = after_msgs
+
+        log(f"  {gap_chat_name}: {gap_days} days ({gap_start_dt.date()} → {gap_end_dt.date()})", verbose_only=True)
 
     # Prepare statistics for JSON output
+    #  year_display: used by the HTML template for the title
+    if year and end_year:
+        year_display_value = f"{year}\u2013{end_year}"
+    elif year:
+        year_display_value = year           # single int
+    else:
+        year_display_value = None           # "All Time"
+
     stats = {
-        "year": year,
-        "year_end": end_year,
+        "year": year_display_value,
         "total_messages": total_messages,
         "sent": sent,
         "received": received,
@@ -1020,7 +1140,7 @@ def analyze_whatsapp_db(db_path, year=None, end_year=None):
     conn.close()
     return stats
 
-def generate_html_wrapped(stats, output_file):
+def generate_html_wrapped(stats, output_file=None):
     """Generate HTML Wrapped visualization"""
     # Import personality classifier
     import sys
@@ -1042,7 +1162,7 @@ def generate_html_wrapped(stats, output_file):
     if not template_path.exists():
         log(f"⚠️  Template not found at {template_path}", verbose_only=False)
         log("   HTML generation skipped.", verbose_only=False)
-        return
+        return None
 
     with open(template_path, 'r', encoding='utf-8') as f:
         template_content = f.read()
@@ -1106,8 +1226,10 @@ def generate_html_wrapped(stats, output_file):
     )
 
     # Write HTML file
-    with open(output_file, 'w', encoding='utf-8') as f:
-        f.write(html)
+    if output_file:
+        with open(output_file, 'w', encoding='utf-8') as f:
+            f.write(html)
+    return html
 
 def main():
     parser = argparse.ArgumentParser(
