@@ -1,0 +1,18 @@
+# Python project artifacts (not part of the gh-pages site)
+build/
+dist/
+__pycache__/
+*.py[cod]
+*.spec
+*.egg-info/
+.venv/
+db/
+examples/
+whatsapp_wrapped/
+whatsapp_wrapped_stats.*
+
+# Tools / IDE
+.DS_Store
+.claude/
+.mcp.json
+.playwright-mcp/
