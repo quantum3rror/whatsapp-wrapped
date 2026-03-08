@@ -30,6 +30,9 @@ jobs:
       - name: Build macOS app
         run: pyinstaller WhatsAppWrapped-GUI.spec
 
+      - name: Ad-hoc sign the app
+        run: codesign --force --deep --sign - "dist/WhatsApp Wrapped.app"
+
       - name: Zip macOS app
         run: cd dist && zip -r "../WhatsApp-Wrapped-macOS-${{ matrix.arch }}.zip" "WhatsApp Wrapped.app"
 
