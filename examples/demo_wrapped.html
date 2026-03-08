@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WhatsApp Wrapped {{ year }}</title>
+    <title>WhatsApp Wrapped 2025</title>
     <style>
       * {
         margin: 0;
@@ -50,13 +50,9 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        /* top/bottom padding must clear the fixed overlays:
-           top bar (section-nav + progress) ends ~5rem from top;
-           controls sit ~5rem from bottom. */
-        padding: 6rem 2rem;
+        padding: 2rem;
         opacity: 0;
         pointer-events: none;
-        overflow-y: auto;
         transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         text-align: center;
       }
@@ -74,8 +70,7 @@
       }
 
       h2 {
-        /* scale with both viewport width AND height so it doesn't crowd list slides */
-        font-size: clamp(1.4rem, min(5vw, 5vh), 3.5rem);
+        font-size: clamp(2rem, 6vw, 5rem);
         font-weight: 700;
       }
 
@@ -358,31 +353,13 @@
         height: 400px;
       }
 
-      /* Scrollable wrapper for list slides */
-      .top10-scroll {
-        width: 90%;
-        max-width: 600px;
-        /* cap height to the available space between the two fixed overlays */
-        max-height: calc(100dvh - 16rem);
-        overflow-y: auto;
-        scrollbar-width: thin;
-        scrollbar-color: var(--card-bg) transparent;
-        margin-top: 0.5rem;
-      }
-      .top10-scroll::-webkit-scrollbar {
-        width: 4px;
-      }
-      .top10-scroll::-webkit-scrollbar-thumb {
-        background: var(--card-bg);
-        border-radius: 2px;
-      }
-
       /* Top 10 Table Styles */
       .top10-table {
-        width: 100%;
+        width: 90%;
+        max-width: 600px;
+        margin-top: 1.5rem;
         border-collapse: separate;
-        /* row gap scales with viewport height */
-        border-spacing: 0 clamp(0.15rem, 0.5vh, 0.4rem);
+        border-spacing: 0 0.4rem;
       }
 
       .top10-table tr {
@@ -391,9 +368,8 @@
       }
 
       .top10-table td {
-        /* padding and font both scale with viewport height */
-        padding: clamp(0.3rem, 1vh, 0.7rem) 1rem;
-        font-size: clamp(0.75rem, min(2.2vw, 1.8vh), 1.1rem);
+        padding: 0.7rem 1rem;
+        font-size: clamp(0.85rem, 2.5vw, 1.1rem);
       }
 
       .top10-table td:first-child {
@@ -433,8 +409,7 @@
 
       @media (max-width: 768px) {
         .slide {
-          /* on small screens the top bar is ~4rem, controls ~4rem */
-          padding: 5rem 1rem;
+          padding: 1rem;
         }
 
         h1 {
@@ -459,13 +434,12 @@
           width: 150px;
         }
 
-        .top10-scroll {
+        .top10-table {
           width: 95%;
-          max-height: calc(100dvh - 13rem);
         }
 
         .top10-table td {
-          padding: clamp(0.25rem, 0.8vh, 0.5rem) 0.6rem;
+          padding: 0.5rem 0.6rem;
         }
       }
 
@@ -579,54 +553,11 @@
         align-self: flex-start;
       }
 
-      .message-sender {
-        font-size: 0.7rem;
-        font-weight: 600;
-        margin-bottom: 0.15rem;
-        color: var(--accent-color);
-      }
-
-      .message-bubble.sent .message-sender {
-        color: #53bdeb;
-      }
-
       .message-meta {
         font-size: 0.65rem;
         color: var(--secondary-color);
         text-align: right;
         margin-top: 0.2rem;
-      }
-
-      /* Gap separator for Funkpause slide */
-      .gap-separator {
-        display: flex;
-        align-items: center;
-        gap: 0.8rem;
-        margin: 0.6rem 0;
-        width: 100%;
-      }
-
-      .gap-separator .line {
-        flex: 1;
-        height: 1px;
-        background: var(--secondary-color);
-        opacity: 0.4;
-      }
-
-      .gap-separator .label {
-        font-size: 0.75rem;
-        color: var(--accent-color);
-        white-space: nowrap;
-        font-weight: 600;
-        letter-spacing: 0.05em;
-      }
-
-      .gap-date-label {
-        font-size: 0.65rem;
-        color: var(--secondary-color);
-        text-align: center;
-        margin-bottom: 0.2rem;
-        opacity: 0.7;
       }
     </style>
   </head>
@@ -636,7 +567,7 @@
       <!-- Slide 1: Welcome -->
       <section class="slide active" data-section="Overview">
         <h1>Your<br />WhatsApp<br />Wrapped</h1>
-        <h2>{{ year }}</h2>
+        <h2>2025</h2>
         <p
           style="
             margin-top: 2rem;
@@ -651,20 +582,20 @@
       <!-- Slide 2: Total Messages -->
       <section class="slide" data-section="Overview">
         <p style="color: var(--secondary-color); font-size: 1.5rem">You sent</p>
-        <div class="stat-big">{{ total_messages }}</div>
+        <div class="stat-big">12,453</div>
         <h2>messages</h2>
         <div class="stat-row">
           <div class="stat-item">
             <p>Sent</p>
-            <p>{{ sent }}</p>
+            <p>5,821</p>
           </div>
           <div class="stat-item">
             <p>Received</p>
-            <p>{{ received }}</p>
+            <p>6,632</p>
           </div>
           <div class="stat-item">
             <p>Per Day</p>
-            <p>{{ messages_per_day }}</p>
+            <p>34.1</p>
           </div>
         </div>
       </section>
@@ -679,15 +610,15 @@
 
       <!-- SECTION: Chats -->
       <!-- Slide 3: Top Individual Chat #1 -->
-      {% if top_individual_chats and top_individual_chats|length > 0 %}
+      
       <section class="slide" data-section="Chats">
         <p style="color: var(--secondary-color); font-size: 1.5rem">
           Your #1 individual chat
         </p>
-        <h1>{{ top_individual_chats[0].name }}</h1>
+        <h1>Alex Chen</h1>
         <p style="font-size: 2rem; margin-top: 1rem">
           <span style="color: var(--accent-color); font-weight: 700">
-            {{ '{:,}'.format(top_individual_chats[0].count) }}
+            1,247
           </span>
           messages
         </p>
@@ -698,7 +629,7 @@
             margin-top: 0.5rem;
           "
         >
-          ≈ {{ (top_individual_chats[0].count / days_in_period)|round(1) }} per
+          ≈ 3.4 per
           day
         </p>
         <p
@@ -710,23 +641,23 @@
         >
           You sent
           <span style="color: var(--accent-color); font-weight: 600"
-            >{{ top_individual_chats[0].sent_pct }}%</span
+            >44.7%</span
           >
           of messages
         </p>
       </section>
-      {% endif %}
+      
 
       <!-- Slide 4: Top Individual Chat #2 -->
-      {% if top_individual_chats and top_individual_chats|length > 1 %}
+      
       <section class="slide" data-section="Chats">
         <p style="color: var(--secondary-color); font-size: 1.5rem">
           Your #2 individual chat
         </p>
-        <h1>{{ top_individual_chats[1].name }}</h1>
+        <h1>Jordan Smith</h1>
         <p style="font-size: 2rem; margin-top: 1rem">
           <span style="color: var(--accent-color); font-weight: 700">
-            {{ '{:,}'.format(top_individual_chats[1].count) }}
+            892
           </span>
           messages
         </p>
@@ -737,7 +668,7 @@
             margin-top: 0.5rem;
           "
         >
-          ≈ {{ (top_individual_chats[1].count / days_in_period)|round(1) }} per
+          ≈ 2.4 per
           day
         </p>
         <p
@@ -749,23 +680,23 @@
         >
           You sent
           <span style="color: var(--accent-color); font-weight: 600"
-            >{{ top_individual_chats[1].sent_pct }}%</span
+            >54.7%</span
           >
           of messages
         </p>
       </section>
-      {% endif %}
+      
 
       <!-- Slide 5: Top Individual Chat #3 -->
-      {% if top_individual_chats and top_individual_chats|length > 2 %}
+      
       <section class="slide" data-section="Chats">
         <p style="color: var(--secondary-color); font-size: 1.5rem">
           Your #3 individual chat
         </p>
-        <h1>{{ top_individual_chats[2].name }}</h1>
+        <h1>Sam Wilson</h1>
         <p style="font-size: 2rem; margin-top: 1rem">
           <span style="color: var(--accent-color); font-weight: 700">
-            {{ '{:,}'.format(top_individual_chats[2].count) }}
+            634
           </span>
           messages
         </p>
@@ -776,7 +707,7 @@
             margin-top: 0.5rem;
           "
         >
-          ≈ {{ (top_individual_chats[2].count / days_in_period)|round(1) }} per
+          ≈ 1.7 per
           day
         </p>
         <p
@@ -788,49 +719,113 @@
         >
           You sent
           <span style="color: var(--accent-color); font-weight: 600"
-            >{{ top_individual_chats[2].sent_pct }}%</span
+            >43.1%</span
           >
           of messages
         </p>
       </section>
-      {% endif %}
+      
 
       <!-- Slide: Top 10 Individual Chats Table -->
-      {% if top_individual_chats_full and top_individual_chats_full|length > 3
-      %}
+      
       <section class="slide" data-section="Chats">
         <h2 style="margin-bottom: 0.5rem">Top 10 Chats</h2>
-        <div class="top10-scroll">
-          <table class="top10-table">
-            {% for chat in top_individual_chats_full[:10] %}
-            <tr>
-              <td>{{ loop.index }}</td>
-              <td>{{ chat.name }}</td>
-              <td>
-                {{ '{:,}'.format(chat.count) }}
-                <span
-                  style="
-                    color: var(--secondary-color);
-                    font-size: 0.75em;
-                    font-weight: 400;
-                  "
-                >
-                  (≈{{ (chat.count / days_in_period)|round(1) }}/d · {{
-                  chat.sent_pct }}% sent)
-                </span>
-              </td>
-            </tr>
-            {% endfor %}
-          </table>
-        </div>
+        <table class="top10-table">
+          
+          <tr>
+            <td>1</td>
+            <td>Alex Chen</td>
+            <td>
+              1,247
+              <span
+                style="
+                  color: var(--secondary-color);
+                  font-size: 0.75em;
+                  font-weight: 400;
+                "
+              >
+                (≈3.4/d · 44.7% sent)
+              </span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td>2</td>
+            <td>Jordan Smith</td>
+            <td>
+              892
+              <span
+                style="
+                  color: var(--secondary-color);
+                  font-size: 0.75em;
+                  font-weight: 400;
+                "
+              >
+                (≈2.4/d · 54.7% sent)
+              </span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td>3</td>
+            <td>Sam Wilson</td>
+            <td>
+              634
+              <span
+                style="
+                  color: var(--secondary-color);
+                  font-size: 0.75em;
+                  font-weight: 400;
+                "
+              >
+                (≈1.7/d · 43.1% sent)
+              </span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td>4</td>
+            <td>Taylor Brown</td>
+            <td>
+              521
+              <span
+                style="
+                  color: var(--secondary-color);
+                  font-size: 0.75em;
+                  font-weight: 400;
+                "
+              >
+                (≈1.4/d · 55.3% sent)
+              </span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td>5</td>
+            <td>Morgan Davis</td>
+            <td>
+              445
+              <span
+                style="
+                  color: var(--secondary-color);
+                  font-size: 0.75em;
+                  font-weight: 400;
+                "
+              >
+                (≈1.2/d · 53.0% sent)
+              </span>
+            </td>
+          </tr>
+          
+        </table>
       </section>
-      {% endif %}
+      
 
       <!-- Slide: Top Chat Timeline -->
-      {% if chat_timelines and chat_timelines.top_chat %}
+      
       <section class="slide" data-section="Chats">
         <h2 style="margin-bottom: 0.5rem">
-          {{ chat_timelines.top_chat.name }}
+          Alex Chen
         </h2>
         <p
           style="
@@ -839,27 +834,25 @@
             margin-bottom: 1.5rem;
           "
         >
-          {% if chat_timelines.top_chat.is_lifetime %}Your history together{%
-          else %}Your time together{% endif %}
+          Your year together
         </p>
         <div class="chart-container">
           <canvas data-chart="chatTimeline"></canvas>
         </div>
       </section>
-      {% endif %}
+      
 
       <!-- SECTION: Groups -->
       <!-- Slide 6: Top Group #1 -->
-      {% if top_groups and top_groups|length > 0 and top_groups[0].name != 'No
-      data' %}
+      
       <section class="slide" data-section="Groups">
         <p style="color: var(--secondary-color); font-size: 1.5rem">
           Your #1 group chat
         </p>
-        <h1>{{ top_groups[0].name }}</h1>
+        <h1>Squad Group Chat 💬</h1>
         <p style="font-size: 2rem; margin-top: 1rem">
           <span style="color: var(--accent-color); font-weight: 700">
-            {{ '{:,}'.format(top_groups[0].count) }}
+            1,834
           </span>
           messages
         </p>
@@ -870,7 +863,7 @@
             margin-top: 0.5rem;
           "
         >
-          ≈ {{ (top_groups[0].count / days_in_period)|round(1) }} per day
+          ≈ 5.0 per day
         </p>
         <p
           style="
@@ -881,24 +874,23 @@
         >
           You sent
           <span style="color: var(--accent-color); font-weight: 600"
-            >{{ top_groups[0].sent_pct }}%</span
+            >5.6%</span
           >
           of messages
         </p>
       </section>
-      {% endif %}
+      
 
       <!-- Slide 7: Top Group #2 -->
-      {% if top_groups and top_groups|length > 1 and top_groups[1].name != 'No
-      data' %}
+      
       <section class="slide" data-section="Groups">
         <p style="color: var(--secondary-color); font-size: 1.5rem">
           Your #2 group chat
         </p>
-        <h1>{{ top_groups[1].name }}</h1>
+        <h1>Work Team</h1>
         <p style="font-size: 2rem; margin-top: 1rem">
           <span style="color: var(--accent-color); font-weight: 700">
-            {{ '{:,}'.format(top_groups[1].count) }}
+            956
           </span>
           messages
         </p>
@@ -909,7 +901,7 @@
             margin-top: 0.5rem;
           "
         >
-          ≈ {{ (top_groups[1].count / days_in_period)|round(1) }} per day
+          ≈ 2.6 per day
         </p>
         <p
           style="
@@ -920,24 +912,23 @@
         >
           You sent
           <span style="color: var(--accent-color); font-weight: 600"
-            >{{ top_groups[1].sent_pct }}%</span
+            >3.5%</span
           >
           of messages
         </p>
       </section>
-      {% endif %}
+      
 
       <!-- Slide 8: Top Group #3 -->
-      {% if top_groups and top_groups|length > 2 and top_groups[2].name != 'No
-      data' %}
+      
       <section class="slide" data-section="Groups">
         <p style="color: var(--secondary-color); font-size: 1.5rem">
           Your #3 group chat
         </p>
-        <h1>{{ top_groups[2].name }}</h1>
+        <h1>Family Group 👨‍👩‍👧‍👦</h1>
         <p style="font-size: 2rem; margin-top: 1rem">
           <span style="color: var(--accent-color); font-weight: 700">
-            {{ '{:,}'.format(top_groups[2].count) }}
+            789
           </span>
           messages
         </p>
@@ -948,7 +939,7 @@
             margin-top: 0.5rem;
           "
         >
-          ≈ {{ (top_groups[2].count / days_in_period)|round(1) }} per day
+          ≈ 2.2 per day
         </p>
         <p
           style="
@@ -959,48 +950,113 @@
         >
           You sent
           <span style="color: var(--accent-color); font-weight: 600"
-            >{{ top_groups[2].sent_pct }}%</span
+            >26.1%</span
           >
           of messages
         </p>
       </section>
-      {% endif %}
+      
 
       <!-- Slide: Top 10 Group Chats Table -->
-      {% if top_groups_full and top_groups_full|length > 3 %}
+      
       <section class="slide" data-section="Groups">
         <h2 style="margin-bottom: 0.5rem">Top 10 Groups</h2>
-        <div class="top10-scroll">
-          <table class="top10-table">
-            {% for group in top_groups_full[:10] %}
-            <tr>
-              <td>{{ loop.index }}</td>
-              <td>{{ group.name }}</td>
-              <td>
-                {{ '{:,}'.format(group.count) }}
-                <span
-                  style="
-                    color: var(--secondary-color);
-                    font-size: 0.75em;
-                    font-weight: 400;
-                  "
-                >
-                  (≈{{ (group.count / days_in_period)|round(1) }}/d · {{
-                  group.sent_pct }}% sent)
-                </span>
-              </td>
-            </tr>
-            {% endfor %}
-          </table>
-        </div>
+        <table class="top10-table">
+          
+          <tr>
+            <td>1</td>
+            <td>Squad Group Chat 💬</td>
+            <td>
+              1,834
+              <span
+                style="
+                  color: var(--secondary-color);
+                  font-size: 0.75em;
+                  font-weight: 400;
+                "
+              >
+                (≈5.0/d · 5.6% sent)
+              </span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td>2</td>
+            <td>Work Team</td>
+            <td>
+              956
+              <span
+                style="
+                  color: var(--secondary-color);
+                  font-size: 0.75em;
+                  font-weight: 400;
+                "
+              >
+                (≈2.6/d · 3.5% sent)
+              </span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td>3</td>
+            <td>Family Group 👨‍👩‍👧‍👦</td>
+            <td>
+              789
+              <span
+                style="
+                  color: var(--secondary-color);
+                  font-size: 0.75em;
+                  font-weight: 400;
+                "
+              >
+                (≈2.2/d · 26.1% sent)
+              </span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td>4</td>
+            <td>College Friends</td>
+            <td>
+              623
+              <span
+                style="
+                  color: var(--secondary-color);
+                  font-size: 0.75em;
+                  font-weight: 400;
+                "
+              >
+                (≈1.7/d · 43.5% sent)
+              </span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td>5</td>
+            <td>Gaming Crew 🎮</td>
+            <td>
+              412
+              <span
+                style="
+                  color: var(--secondary-color);
+                  font-size: 0.75em;
+                  font-weight: 400;
+                "
+              >
+                (≈1.1/d · 44.2% sent)
+              </span>
+            </td>
+          </tr>
+          
+        </table>
       </section>
-      {% endif %}
+      
 
       <!-- Slide: Top Group Timeline -->
-      {% if chat_timelines and chat_timelines.top_group %}
+      
       <section class="slide" data-section="Groups">
         <h2 style="margin-bottom: 0.5rem">
-          {{ chat_timelines.top_group.name }}
+          Squad Group Chat 💬
         </h2>
         <p
           style="
@@ -1009,18 +1065,17 @@
             margin-bottom: 1.5rem;
           "
         >
-          {% if chat_timelines.top_group.is_lifetime %}Your history together{%
-          else %}Your time together{% endif %}
+          Your year together
         </p>
         <div class="chart-container">
           <canvas data-chart="groupTimeline"></canvas>
         </div>
       </section>
-      {% endif %}
+      
 
       <!-- SECTION: Content -->
       <!-- Slide: Media Breakdown -->
-      {% if media_counts and media_counts|length > 0 %}
+      
       <section class="slide" data-section="Content">
         <h2 style="margin-bottom: 0.5rem">Your media</h2>
         <p
@@ -1033,45 +1088,89 @@
           What you shared & received
         </p>
         <div class="media-grid">
-          {% set media_icons = {'Photos': '📷', 'Videos': '🎬', 'Audio': '🎵',
-          'GIFs': '🎞️', 'Stickers': '🏷️', 'Documents': '📄', 'Links': '🔗',
-          'Locations': '📍', 'Contact Cards': '👤', 'Calls': '📞', 'Deleted':
-          '🗑️', 'Text': '💬', 'Other': '📎'} %} {% for m in media_counts if
-          m.type != 'Text' and m.count > 0 %} {% if loop.index <= 9 %}
+            
           <div class="media-card">
-            <div class="media-icon">{{ media_icons.get(m.type, '📎') }}</div>
-            <div class="media-count">{{ '{:,}'.format(m.count) }}</div>
-            <div class="media-label">{{ m.type }}</div>
+            <div class="media-icon">📷</div>
+            <div class="media-count">1,234</div>
+            <div class="media-label">Photos</div>
           </div>
-          {% endif %} {% endfor %}
+            
+          <div class="media-card">
+            <div class="media-icon">🏷️</div>
+            <div class="media-count">567</div>
+            <div class="media-label">Stickers</div>
+          </div>
+            
+          <div class="media-card">
+            <div class="media-icon">🎵</div>
+            <div class="media-count">234</div>
+            <div class="media-label">Audio</div>
+          </div>
+            
+          <div class="media-card">
+            <div class="media-icon">🔗</div>
+            <div class="media-count">189</div>
+            <div class="media-label">Links</div>
+          </div>
+            
+          <div class="media-card">
+            <div class="media-icon">🎬</div>
+            <div class="media-count">156</div>
+            <div class="media-label">Videos</div>
+          </div>
+            
+          <div class="media-card">
+            <div class="media-icon">🎞️</div>
+            <div class="media-count">134</div>
+            <div class="media-label">GIFs</div>
+          </div>
+            
+          <div class="media-card">
+            <div class="media-icon">📎</div>
+            <div class="media-count">98</div>
+            <div class="media-label">Reactions</div>
+          </div>
+            
+          <div class="media-card">
+            <div class="media-icon">📞</div>
+            <div class="media-count">45</div>
+            <div class="media-label">Calls</div>
+          </div>
+            
+          <div class="media-card">
+            <div class="media-icon">📄</div>
+            <div class="media-count">23</div>
+            <div class="media-label">Documents</div>
+          </div>
+               
         </div>
       </section>
-      {% endif %}
+      
 
       <!-- Slide: Busiest Day -->
-      {% if busiest_day and busiest_day.date %}
+      
       <section class="slide" data-section="Content">
         <p style="color: var(--secondary-color); font-size: 1.5rem">
           Your busiest day was
         </p>
         <h1 style="font-size: clamp(2rem, 8vw, 5rem)">
-          {{ busiest_day.date }}
+          2025-09-15
         </h1>
         <div
           class="stat-big"
           style="font-size: clamp(3rem, 10vw, 8rem); margin-top: 1rem"
         >
-          {{ '{:,}'.format(busiest_day.count) }}
+          187
         </div>
         <h2 style="font-size: clamp(1.5rem, 4vw, 3rem)">messages</h2>
       </section>
-      {% endif %}
+      
 
       <!-- Slide: First Message Sent -->
-      {% if first_message_sent %}
+      
       <section class="slide" data-section="Content">
         <p style="color: var(--secondary-color); font-size: 1.3rem">
-          First message you sent {% if year %}in {{ year }}{% endif %}
+          First message you sent in 2025
         </p>
         <p
           style="
@@ -1080,39 +1179,48 @@
             margin-top: 0.3rem;
           "
         >
-          {% if first_message_sent.is_group %}In{% else %}To{% endif %}
+          To
           <span style="color: var(--text-color); font-weight: 600"
-            >{{ first_message_sent.chat }}</span
+            >Alex Chen</span
           >
-          · {{ first_message_sent.date }}
+          · 2025-01-01
         </p>
         <div class="chat-thread">
           <div class="message-bubble highlight sent">
-            {% if first_message_sent.is_group and first_message_sent.sender %}
-            <div class="message-sender">{{ first_message_sent.sender }}</div>
-            {% endif %} {{ first_message_sent.text }}
-            <div class="message-meta">{{ first_message_sent.time }}</div>
+            Happy New Year! 🎉
+            <div class="message-meta">00:05</div>
           </div>
-          {% if first_message_sent.context %} {% for ctx in
-          first_message_sent.context %}
+           
           <div
-            class="message-bubble context {{ 'sent' if ctx.from_me else 'received' }}"
+            class="message-bubble context sent"
           >
-            {% if first_message_sent.is_group and ctx.sender %}
-            <div class="message-sender">{{ ctx.sender }}</div>
-            {% endif %} {{ ctx.text }}
-            <div class="message-meta">{{ ctx.time }}</div>
+            Happy New Year! 🎉
+            <div class="message-meta">00:05</div>
           </div>
-          {% endfor %} {% endif %}
+          
+          <div
+            class="message-bubble context received"
+          >
+            You too!
+            <div class="message-meta">00:12</div>
+          </div>
+          
+          <div
+            class="message-bubble context sent"
+          >
+            Ready for 2025?
+            <div class="message-meta">00:15</div>
+          </div>
+           
         </div>
       </section>
-      {% endif %}
+      
 
       <!-- Slide: First Message Received -->
-      {% if first_message_received %}
+      
       <section class="slide" data-section="Content">
         <p style="color: var(--secondary-color); font-size: 1.3rem">
-          First message you received {% if year %}in {{ year }}{% endif %}
+          First message you received in 2025
         </p>
         <p
           style="
@@ -1121,42 +1229,48 @@
             margin-top: 0.3rem;
           "
         >
-          {% if first_message_received.is_group %}In{% else %}From{% endif %}
+          From
           <span style="color: var(--text-color); font-weight: 600"
-            >{{ first_message_received.chat }}</span
+            >Jordan Smith</span
           >
-          · {{ first_message_received.date }}
+          · 2025-01-01
         </p>
         <div class="chat-thread">
           <div class="message-bubble highlight received">
-            {% if first_message_received.is_group and
-            first_message_received.sender %}
-            <div class="message-sender">
-              {{ first_message_received.sender }}
-            </div>
-            {% endif %} {{ first_message_received.text }}
-            <div class="message-meta">{{ first_message_received.time }}</div>
+            Happy New Year!! ✨
+            <div class="message-meta">00:01</div>
           </div>
-          {% if first_message_received.context %} {% for ctx in
-          first_message_received.context %}
+           
           <div
-            class="message-bubble context {{ 'sent' if ctx.from_me else 'received' }}"
+            class="message-bubble context received"
           >
-            {% if first_message_received.is_group and ctx.sender %}
-            <div class="message-sender">{{ ctx.sender }}</div>
-            {% endif %} {{ ctx.text }}
-            <div class="message-meta">{{ ctx.time }}</div>
+            Happy New Year!! ✨
+            <div class="message-meta">00:01</div>
           </div>
-          {% endfor %} {% endif %}
+          
+          <div
+            class="message-bubble context sent"
+          >
+            Thank you! 🥳
+            <div class="message-meta">00:08</div>
+          </div>
+          
+          <div
+            class="message-bubble context received"
+          >
+            Let's make it great
+            <div class="message-meta">00:10</div>
+          </div>
+           
         </div>
       </section>
-      {% endif %}
+      
 
       <!-- Slide: Last Message Sent -->
-      {% if last_message_sent %}
+      
       <section class="slide" data-section="Content">
         <p style="color: var(--secondary-color); font-size: 1.3rem">
-          Last message you sent {% if year %}in {{ year }}{% endif %}
+          Last message you sent in 2025
         </p>
         <p
           style="
@@ -1165,39 +1279,48 @@
             margin-top: 0.3rem;
           "
         >
-          {% if last_message_sent.is_group %}In{% else %}To{% endif %}
+          To
           <span style="color: var(--text-color); font-weight: 600"
-            >{{ last_message_sent.chat }}</span
+            >Morgan Davis</span
           >
-          · {{ last_message_sent.date }}
+          · 2025-12-31
         </p>
         <div class="chat-thread">
-          {% if last_message_sent.context %} {% for ctx in
-          last_message_sent.context %}
+           
           <div
-            class="message-bubble context {{ 'sent' if ctx.from_me else 'received' }}"
+            class="message-bubble context sent"
           >
-            {% if last_message_sent.is_group and ctx.sender %}
-            <div class="message-sender">{{ ctx.sender }}</div>
-            {% endif %} {{ ctx.text }}
-            <div class="message-meta">{{ ctx.time }}</div>
+            About to leave for the party
+            <div class="message-meta">23:55</div>
           </div>
-          {% endfor %} {% endif %}
+          
+          <div
+            class="message-bubble context received"
+          >
+            Have fun!
+            <div class="message-meta">23:56</div>
+          </div>
+          
+          <div
+            class="message-bubble context sent"
+          >
+            See you next year!
+            <div class="message-meta">23:58</div>
+          </div>
+           
           <div class="message-bubble highlight sent">
-            {% if last_message_sent.is_group and last_message_sent.sender %}
-            <div class="message-sender">{{ last_message_sent.sender }}</div>
-            {% endif %} {{ last_message_sent.text }}
-            <div class="message-meta">{{ last_message_sent.time }}</div>
+            See you next year!
+            <div class="message-meta">23:58</div>
           </div>
         </div>
       </section>
-      {% endif %}
+      
 
       <!-- Slide: Last Message Received -->
-      {% if last_message_received %}
+      
       <section class="slide" data-section="Content">
         <p style="color: var(--secondary-color); font-size: 1.3rem">
-          Last message you received {% if year %}in {{ year }}{% endif %}
+          Last message you received in 2025
         </p>
         <p
           style="
@@ -1206,90 +1329,71 @@
             margin-top: 0.3rem;
           "
         >
-          {% if last_message_received.is_group %}In{% else %}From{% endif %}
+          From
           <span style="color: var(--text-color); font-weight: 600"
-            >{{ last_message_received.chat }}</span
+            >Taylor Brown</span
           >
-          · {{ last_message_received.date }}
+          · 2025-12-31
         </p>
         <div class="chat-thread">
-          {% if last_message_received.context %} {% for ctx in
-          last_message_received.context %}
+           
           <div
-            class="message-bubble context {{ 'sent' if ctx.from_me else 'received' }}"
+            class="message-bubble context sent"
           >
-            {% if last_message_received.is_group and ctx.sender %}
-            <div class="message-sender">{{ ctx.sender }}</div>
-            {% endif %} {{ ctx.text }}
-            <div class="message-meta">{{ ctx.time }}</div>
+            Long day today
+            <div class="message-meta">23:40</div>
           </div>
-          {% endfor %} {% endif %}
+          
+          <div
+            class="message-bubble context received"
+          >
+            Get some rest
+            <div class="message-meta">23:42</div>
+          </div>
+          
+          <div
+            class="message-bubble context received"
+          >
+            Good night! 🌙
+            <div class="message-meta">23:45</div>
+          </div>
+           
           <div class="message-bubble highlight received">
-            {% if last_message_received.is_group and
-            last_message_received.sender %}
-            <div class="message-sender">{{ last_message_received.sender }}</div>
-            {% endif %} {{ last_message_received.text }}
-            <div class="message-meta">{{ last_message_received.time }}</div>
+            Good night! 🌙
+            <div class="message-meta">23:45</div>
           </div>
         </div>
       </section>
-      {% endif %}
+      
 
       <!-- Slide: Longest Gap -->
-      {% if longest_gap %}
+      
       <section class="slide" data-section="Content">
         <p style="color: var(--secondary-color); font-size: 1.5rem">
           Longest silence
         </p>
         <div class="stat-big" style="font-size: clamp(3rem, 10vw, 7rem)">
-          {{ longest_gap.days }}{% if longest_gap.days == 1.0 %} day{% else %}
-          days{% endif %}
+          210.0
+          days
         </div>
         <p style="font-size: 1.3rem; margin-top: 1rem">of radio silence with</p>
         <h2 style="color: var(--accent-color); margin-top: 0.5rem">
-          {{ longest_gap.chat }}
+          Old Friend
         </h2>
-
-        {% if longest_gap.before_messages or longest_gap.after_messages %}
-        <div class="chat-thread" style="margin-top: 1.2rem">
-          {% if longest_gap.before_messages %}
-          <div class="gap-date-label">
-            {{ longest_gap.before_messages[0].date }}
-          </div>
-          {% for msg in longest_gap.before_messages %}
-          <div
-            class="message-bubble context {{ 'sent' if msg.from_me else 'received' }}"
-          >
-            {{ msg.text }}
-            <div class="message-meta">{{ msg.time }}</div>
-          </div>
-          {% endfor %} {% endif %}
-
-          <div class="gap-separator">
-            <div class="line"></div>
-            <div class="label">⏸️ {{ longest_gap.days }} days</div>
-            <div class="line"></div>
-          </div>
-
-          {% if longest_gap.after_messages %}
-          <div class="gap-date-label">
-            {{ longest_gap.after_messages[0].date }}
-          </div>
-          {% for msg in longest_gap.after_messages %}
-          <div
-            class="message-bubble context {{ 'sent' if msg.from_me else 'received' }}"
-          >
-            {{ msg.text }}
-            <div class="message-meta">{{ msg.time }}</div>
-          </div>
-          {% endfor %} {% endif %}
-        </div>
-        {% endif %}
+        <p
+          style="
+            color: var(--secondary-color);
+            font-size: 0.9rem;
+            margin-top: 1rem;
+          "
+        >
+          … but then you started talking again 😄
+        </p>
       </section>
-      {% endif %}
+      
 
       <!-- Slide: Top Emojis -->
-      {% if top_emojis and top_emojis|length > 0 %}
+      
       <section class="slide" data-section="Content">
         <h2 style="margin-bottom: 0.5rem">Your Top Emojis</h2>
         <p
@@ -1301,24 +1405,74 @@
         >
           Most used by you
         </p>
-        <div class="top10-scroll">
-          <table class="top10-table">
-            {% for item in top_emojis[:10] %}
-            <tr>
-              <td>{{ loop.index }}</td>
-              <td style="font-size: clamp(1rem, 3vh, 1.6rem)">
-                {{ item.emoji }}
-              </td>
-              <td>{{ '{:,}'.format(item.count) }}</td>
-            </tr>
-            {% endfor %}
-          </table>
-        </div>
+        <table class="top10-table">
+          
+          <tr>
+            <td>1</td>
+            <td style="font-size: 1.6rem">😂</td>
+            <td>234</td>
+          </tr>
+          
+          <tr>
+            <td>2</td>
+            <td style="font-size: 1.6rem">❤️</td>
+            <td>189</td>
+          </tr>
+          
+          <tr>
+            <td>3</td>
+            <td style="font-size: 1.6rem">👍</td>
+            <td>156</td>
+          </tr>
+          
+          <tr>
+            <td>4</td>
+            <td style="font-size: 1.6rem">🔥</td>
+            <td>134</td>
+          </tr>
+          
+          <tr>
+            <td>5</td>
+            <td style="font-size: 1.6rem">✨</td>
+            <td>112</td>
+          </tr>
+          
+          <tr>
+            <td>6</td>
+            <td style="font-size: 1.6rem">🎉</td>
+            <td>98</td>
+          </tr>
+          
+          <tr>
+            <td>7</td>
+            <td style="font-size: 1.6rem">😭</td>
+            <td>87</td>
+          </tr>
+          
+          <tr>
+            <td>8</td>
+            <td style="font-size: 1.6rem">🥰</td>
+            <td>76</td>
+          </tr>
+          
+          <tr>
+            <td>9</td>
+            <td style="font-size: 1.6rem">💀</td>
+            <td>65</td>
+          </tr>
+          
+          <tr>
+            <td>10</td>
+            <td style="font-size: 1.6rem">🤣</td>
+            <td>54</td>
+          </tr>
+          
+        </table>
       </section>
-      {% endif %}
+      
 
       <!-- Slide: Most Sent Message Hero -->
-      {% if top_messages and top_messages|length > 0 %}
+      
       <section class="slide" data-section="Content">
         <p style="color: var(--secondary-color); font-size: 1.5rem">
           Your most sent message
@@ -1331,43 +1485,176 @@
             max-width: 80%;
           "
         >
-          "{{ top_messages[0].text }}"
+          "Haha"
         </h1>
         <p style="font-size: 2rem; margin-top: 1.5rem">
           <span style="color: var(--accent-color); font-weight: 700">
-            {{ '{:,}'.format(top_messages[0].count) }}
+            87
           </span>
           times
         </p>
       </section>
-      {% endif %}
+      
 
       <!-- Slide: Top 10 Most Sent Messages Table -->
-      {% if top_messages and top_messages|length > 1 %}
+      
       <section class="slide" data-section="Content">
         <h2 style="margin-bottom: 0.5rem">Top 10 Sent Messages</h2>
-        <div class="top10-scroll">
-          <table class="top10-table">
-            {% for msg in top_messages[:10] %}
-            <tr>
-              <td>{{ loop.index }}</td>
-              <td
-                style="
-                  max-width: 320px;
-                  overflow: hidden;
-                  text-overflow: ellipsis;
-                  white-space: nowrap;
-                "
-              >
-                {{ msg.text }}
-              </td>
-              <td>{{ '{:,}'.format(msg.count) }}x</td>
-            </tr>
-            {% endfor %}
-          </table>
-        </div>
+        <table class="top10-table">
+          
+          <tr>
+            <td>1</td>
+            <td
+              style="
+                max-width: 320px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              "
+            >
+              Haha
+            </td>
+            <td>87x</td>
+          </tr>
+          
+          <tr>
+            <td>2</td>
+            <td
+              style="
+                max-width: 320px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              "
+            >
+              Yeah
+            </td>
+            <td>65x</td>
+          </tr>
+          
+          <tr>
+            <td>3</td>
+            <td
+              style="
+                max-width: 320px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              "
+            >
+              Ok
+            </td>
+            <td>54x</td>
+          </tr>
+          
+          <tr>
+            <td>4</td>
+            <td
+              style="
+                max-width: 320px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              "
+            >
+              Thanks
+            </td>
+            <td>43x</td>
+          </tr>
+          
+          <tr>
+            <td>5</td>
+            <td
+              style="
+                max-width: 320px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              "
+            >
+              No way
+            </td>
+            <td>38x</td>
+          </tr>
+          
+          <tr>
+            <td>6</td>
+            <td
+              style="
+                max-width: 320px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              "
+            >
+              Let's go
+            </td>
+            <td>32x</td>
+          </tr>
+          
+          <tr>
+            <td>7</td>
+            <td
+              style="
+                max-width: 320px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              "
+            >
+              Perfect
+            </td>
+            <td>28x</td>
+          </tr>
+          
+          <tr>
+            <td>8</td>
+            <td
+              style="
+                max-width: 320px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              "
+            >
+              Awesome
+            </td>
+            <td>24x</td>
+          </tr>
+          
+          <tr>
+            <td>9</td>
+            <td
+              style="
+                max-width: 320px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              "
+            >
+              I see
+            </td>
+            <td>21x</td>
+          </tr>
+          
+          <tr>
+            <td>10</td>
+            <td
+              style="
+                max-width: 320px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              "
+            >
+              For real
+            </td>
+            <td>19x</td>
+          </tr>
+          
+        </table>
       </section>
-      {% endif %}
+      
 
       <!-- SECTION: Activity -->
       <!-- Slide: Messages per Month -->
@@ -1403,18 +1690,13 @@
       </section>
 
       <!-- Slide: Response Time -->
-      {% if response_time %}
+      
       <section class="slide" data-section="Activity">
         <p style="color: var(--secondary-color); font-size: 1.5rem">
           Your typical response time
         </p>
         <div class="stat-big" style="font-size: clamp(3rem, 10vw, 7rem)">
-          {% if response_time.median_seconds < 60 %} {{
-          response_time.median_seconds }}s {% elif response_time.median_seconds
-          < 3600 %} {{ (response_time.median_seconds // 60) }}m {{
-          (response_time.median_seconds % 60) }}s {% else %} {{
-          (response_time.median_seconds // 3600) }}h {{
-          ((response_time.median_seconds % 3600) // 60) }}m {% endif %}
+           4m 5s 
         </div>
         <p
           style="
@@ -1428,15 +1710,15 @@
         <div class="stat-row" style="margin-top: 2rem">
           <div class="stat-item">
             <p>&lt; 1 min</p>
-            <p>{{ response_time.under_1min_pct }}%</p>
+            <p>35.2%</p>
           </div>
           <div class="stat-item">
             <p>&lt; 5 min</p>
-            <p>{{ response_time.under_5min_pct }}%</p>
+            <p>52.8%</p>
           </div>
           <div class="stat-item">
             <p>&lt; 1 hour</p>
-            <p>{{ response_time.under_1h_pct }}%</p>
+            <p>78.9%</p>
           </div>
         </div>
         <p
@@ -1446,14 +1728,14 @@
             margin-top: 1.5rem;
           "
         >
-          Based on {{ '{:,}'.format(response_time.total_responses) }} responses
+          Based on 3,245 responses
           in individual chats
         </p>
       </section>
-      {% endif %}
+      
 
       <!-- Slide: Response Time Comparison -->
-      {% if response_comparison and response_comparison|length > 0 %}
+      
       <section class="slide" data-section="Activity">
         <h2 style="margin-bottom: 0.5rem">Who replies faster?</h2>
         <p
@@ -1466,42 +1748,88 @@
           Median response time per chat
         </p>
         <div class="response-bars">
-          {% for rc in response_comparison %}
+          
           <div class="response-bar-row">
-            <div class="response-bar-label">{{ rc.name }}</div>
+            <div class="response-bar-label">Alex Chen</div>
             <div class="response-bar-pair">
               <div class="response-bar-track">
                 <span class="bar-who">You</span>
                 <div
                   class="bar-fill you"
-                  data-seconds="{{ rc.you_median }}"
+                  data-seconds="45"
                 ></div>
                 <span class="bar-time">
-                  {% if rc.you_median < 60 %}{{ rc.you_median }}s{% elif
-                  rc.you_median < 3600 %}{{ (rc.you_median // 60) }}m {{
-                  (rc.you_median % 60) }}s{% else %}{{ (rc.you_median // 3600)
-                  }}h {{ ((rc.you_median % 3600) // 60) }}m{% endif %}
+                  45s
                 </span>
               </div>
               <div class="response-bar-track">
                 <span class="bar-who">Them</span>
                 <div
                   class="bar-fill them"
-                  data-seconds="{{ rc.them_median }}"
+                  data-seconds="32"
                 ></div>
                 <span class="bar-time">
-                  {% if rc.them_median < 60 %}{{ rc.them_median }}s{% elif
-                  rc.them_median < 3600 %}{{ (rc.them_median // 60) }}m {{
-                  (rc.them_median % 60) }}s{% else %}{{ (rc.them_median // 3600)
-                  }}h {{ ((rc.them_median % 3600) // 60) }}m{% endif %}
+                  32s
                 </span>
               </div>
             </div>
           </div>
-          {% endfor %}
+          
+          <div class="response-bar-row">
+            <div class="response-bar-label">Jordan Smith</div>
+            <div class="response-bar-pair">
+              <div class="response-bar-track">
+                <span class="bar-who">You</span>
+                <div
+                  class="bar-fill you"
+                  data-seconds="189"
+                ></div>
+                <span class="bar-time">
+                  3m 9s
+                </span>
+              </div>
+              <div class="response-bar-track">
+                <span class="bar-who">Them</span>
+                <div
+                  class="bar-fill them"
+                  data-seconds="156"
+                ></div>
+                <span class="bar-time">
+                  2m 36s
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="response-bar-row">
+            <div class="response-bar-label">Sam Wilson</div>
+            <div class="response-bar-pair">
+              <div class="response-bar-track">
+                <span class="bar-who">You</span>
+                <div
+                  class="bar-fill you"
+                  data-seconds="78"
+                ></div>
+                <span class="bar-time">
+                  1m 18s
+                </span>
+              </div>
+              <div class="response-bar-track">
+                <span class="bar-who">Them</span>
+                <div
+                  class="bar-fill them"
+                  data-seconds="34"
+                ></div>
+                <span class="bar-time">
+                  34s
+                </span>
+              </div>
+            </div>
+          </div>
+          
         </div>
       </section>
-      {% endif %}
+      
 
       <!-- SECTION: Profile -->
       <!-- Slide: Conversation Stats -->
@@ -1512,10 +1840,10 @@
             Total conversations
           </p>
           <p class="stat-big" style="font-size: 6rem">
-            {{ total_conversations }}
+            47
           </p>
 
-          {% if date_range and date_range.start and date_range.end %}
+          
           <p
             style="
               color: var(--secondary-color);
@@ -1523,16 +1851,16 @@
               font-size: 1.2rem;
             "
           >
-            From {{ date_range.start }} to {{ date_range.end }}
+            From 2025-01-01 to 2025-12-31
           </p>
-          {% endif %}
+          
         </div>
       </section>
 
       <!-- Slide: Personality -->
       <section class="slide" data-section="Profile">
         <h2 style="margin-bottom: 1rem">You are a</h2>
-        <h1 style="color: var(--accent-color)">{{ personality }}</h1>
+        <h1 style="color: var(--accent-color)">Balanced Chatter</h1>
         <p
           style="
             margin-top: 1rem;
@@ -1542,9 +1870,8 @@
             line-height: 1.6;
           "
         >
-          {{ personality_description }}
+          You maintain a perfect balance between talking and listening.
         </p>
-        {% if personality_traits %}
         <div
           style="
             margin-top: 2.5rem;
@@ -1565,10 +1892,9 @@
             Also
           </p>
           <p style="font-size: 1.1rem; font-weight: 500">
-            {{ personality_traits|join(' • ') }}
+            Sticker Fanatic • Emoji Enthusiast
           </p>
         </div>
-        {% endif %}
       </section>
 
       <!-- Slide: Thank You -->
@@ -1620,7 +1946,7 @@
 
     <!-- Data -->
     <script>
-      const wrappedData = {{ data_json|safe }};
+      const wrappedData = {"year": 2025, "total_messages": 12453, "sent": 5821, "received": 6632, "total_conversations": 47, "days_in_period": 365, "messages_per_day": 34.1, "date_range": {"start": "2025-01-01", "end": "2025-12-31"}, "top_individual_chats": [{"name": "Alex Chen", "count": 1247, "sent": 558, "sent_pct": 44.7}, {"name": "Jordan Smith", "count": 892, "sent": 488, "sent_pct": 54.7}, {"name": "Sam Wilson", "count": 634, "sent": 273, "sent_pct": 43.1}, {"name": "Taylor Brown", "count": 521, "sent": 288, "sent_pct": 55.3}, {"name": "Morgan Davis", "count": 445, "sent": 236, "sent_pct": 53.0}], "top_groups": [{"name": "Squad Group Chat \ud83d\udcac", "count": 1834, "sent": 103, "sent_pct": 5.6}, {"name": "Work Team", "count": 956, "sent": 33, "sent_pct": 3.5}, {"name": "Family Group \ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66", "count": 789, "sent": 206, "sent_pct": 26.1}, {"name": "College Friends", "count": 623, "sent": 271, "sent_pct": 43.5}, {"name": "Gaming Crew \ud83c\udfae", "count": 412, "sent": 182, "sent_pct": 44.2}], "top_hours": [{"hour": 18, "count": 1245}, {"hour": 19, "count": 1123}, {"hour": 17, "count": 1089}, {"hour": 20, "count": 987}, {"hour": 12, "count": 876}], "all_hours": [{"hour": 0, "count": 45}, {"hour": 1, "count": 12}, {"hour": 2, "count": 8}, {"hour": 3, "count": 5}, {"hour": 4, "count": 15}, {"hour": 5, "count": 32}, {"hour": 6, "count": 123}, {"hour": 7, "count": 289}, {"hour": 8, "count": 456}, {"hour": 9, "count": 567}, {"hour": 10, "count": 678}, {"hour": 11, "count": 789}, {"hour": 12, "count": 876}, {"hour": 13, "count": 765}, {"hour": 14, "count": 890}, {"hour": 15, "count": 923}, {"hour": 16, "count": 1012}, {"hour": 17, "count": 1089}, {"hour": 18, "count": 1245}, {"hour": 19, "count": 1123}, {"hour": 20, "count": 987}, {"hour": 21, "count": 654}, {"hour": 22, "count": 432}, {"hour": 23, "count": 189}], "days_of_week": [{"day": "Sunday", "count": 1654}, {"day": "Monday", "count": 1823}, {"day": "Tuesday", "count": 1892}, {"day": "Wednesday", "count": 1765}, {"day": "Thursday", "count": 1923}, {"day": "Friday", "count": 2101}, {"day": "Saturday", "count": 1295}], "busiest_day": {"date": "2025-09-15", "count": 187}, "top_emojis": [{"emoji": "\ud83d\ude02", "count": 234}, {"emoji": "\u2764\ufe0f", "count": 189}, {"emoji": "\ud83d\udc4d", "count": 156}, {"emoji": "\ud83d\udd25", "count": 134}, {"emoji": "\u2728", "count": 112}, {"emoji": "\ud83c\udf89", "count": 98}, {"emoji": "\ud83d\ude2d", "count": 87}, {"emoji": "\ud83e\udd70", "count": 76}, {"emoji": "\ud83d\udc80", "count": 65}, {"emoji": "\ud83e\udd23", "count": 54}], "top_messages": [{"text": "Haha", "count": 87}, {"text": "Yeah", "count": 65}, {"text": "Ok", "count": 54}, {"text": "Thanks", "count": 43}, {"text": "No way", "count": 38}, {"text": "Let's go", "count": 32}, {"text": "Perfect", "count": 28}, {"text": "Awesome", "count": 24}, {"text": "I see", "count": 21}, {"text": "For real", "count": 19}], "media_counts": [{"type": "Text", "count": 9856}, {"type": "Photos", "count": 1234}, {"type": "Stickers", "count": 567}, {"type": "Audio", "count": 234}, {"type": "Links", "count": 189}, {"type": "Videos", "count": 156}, {"type": "GIFs", "count": 134}, {"type": "Reactions", "count": 98}, {"type": "Calls", "count": 45}, {"type": "Documents", "count": 23}, {"type": "Locations", "count": 12}, {"type": "Polls", "count": 5}], "messages_per_month": [{"month": 1, "name": "Jan", "count": 1023}, {"month": 2, "name": "Feb", "count": 892}, {"month": 3, "name": "Mar", "count": 945}, {"month": 4, "name": "Apr", "count": 1089}, {"month": 5, "name": "May", "count": 1234}, {"month": 6, "name": "Jun", "count": 876}, {"month": 7, "name": "Jul", "count": 765}, {"month": 8, "name": "Aug", "count": 654}, {"month": 9, "name": "Sep", "count": 1456}, {"month": 10, "name": "Oct", "count": 987}, {"month": 11, "name": "Nov", "count": 1123}, {"month": 12, "name": "Dec", "count": 1409}], "response_time": {"median_seconds": 245, "average_seconds": 1890, "total_responses": 3245, "under_1min_pct": 35.2, "under_5min_pct": 52.8, "under_1h_pct": 78.9}, "chat_timelines": {"top_chat": {"name": "Alex Chen", "months": [{"month": 1, "name": "Jan", "label": "Jan", "count": 145}, {"month": 2, "name": "Feb", "label": "Feb", "count": 98}, {"month": 3, "name": "Mar", "label": "Mar", "count": 112}, {"month": 4, "name": "Apr", "label": "Apr", "count": 134}, {"month": 5, "name": "May", "label": "May", "count": 156}, {"month": 6, "name": "Jun", "label": "Jun", "count": 87}, {"month": 7, "name": "Jul", "label": "Jul", "count": 76}, {"month": 8, "name": "Aug", "label": "Aug", "count": 54}, {"month": 9, "name": "Sep", "label": "Sep", "count": 167}, {"month": 10, "name": "Oct", "label": "Oct", "count": 89}, {"month": 11, "name": "Nov", "label": "Nov", "count": 78}, {"month": 12, "name": "Dec", "label": "Dec", "count": 51}], "is_lifetime": false}, "top_group": {"name": "Squad Group Chat \ud83d\udcac", "months": [{"month": 1, "name": "Jan", "label": "Jan", "count": 234}, {"month": 2, "name": "Feb", "label": "Feb", "count": 189}, {"month": 3, "name": "Mar", "label": "Mar", "count": 201}, {"month": 4, "name": "Apr", "label": "Apr", "count": 178}, {"month": 5, "name": "May", "label": "May", "count": 267}, {"month": 6, "name": "Jun", "label": "Jun", "count": 123}, {"month": 7, "name": "Jul", "label": "Jul", "count": 98}, {"month": 8, "name": "Aug", "label": "Aug", "count": 87}, {"month": 9, "name": "Sep", "label": "Sep", "count": 189}, {"month": 10, "name": "Oct", "label": "Oct", "count": 67}, {"month": 11, "name": "Nov", "label": "Nov", "count": 89}, {"month": 12, "name": "Dec", "label": "Dec", "count": 112}], "is_lifetime": false}}, "response_comparison": [{"name": "Alex Chen", "you_median": 45, "them_median": 32, "you_replies": 567, "them_replies": 612}, {"name": "Jordan Smith", "you_median": 189, "them_median": 156, "you_replies": 423, "them_replies": 445}, {"name": "Sam Wilson", "you_median": 78, "them_median": 34, "you_replies": 289, "them_replies": 312}], "first_message_sent": {"text": "Happy New Year! \ud83c\udf89", "chat": "Alex Chen", "from_me": true, "date": "2025-01-01", "time": "00:05", "context": [{"text": "Happy New Year! \ud83c\udf89", "from_me": true, "time": "00:05"}, {"text": "You too!", "from_me": false, "time": "00:12"}, {"text": "Ready for 2025?", "from_me": true, "time": "00:15"}]}, "first_message_received": {"text": "Happy New Year!! \u2728", "chat": "Jordan Smith", "from_me": false, "date": "2025-01-01", "time": "00:01", "context": [{"text": "Happy New Year!! \u2728", "from_me": false, "time": "00:01"}, {"text": "Thank you! \ud83e\udd73", "from_me": true, "time": "00:08"}, {"text": "Let's make it great", "from_me": false, "time": "00:10"}]}, "last_message_sent": {"text": "See you next year!", "chat": "Morgan Davis", "from_me": true, "date": "2025-12-31", "time": "23:58", "context": [{"text": "About to leave for the party", "from_me": true, "time": "23:55"}, {"text": "Have fun!", "from_me": false, "time": "23:56"}, {"text": "See you next year!", "from_me": true, "time": "23:58"}]}, "last_message_received": {"text": "Good night! \ud83c\udf19", "chat": "Taylor Brown", "from_me": false, "date": "2025-12-31", "time": "23:45", "context": [{"text": "Long day today", "from_me": true, "time": "23:40"}, {"text": "Get some rest", "from_me": false, "time": "23:42"}, {"text": "Good night! \ud83c\udf19", "from_me": false, "time": "23:45"}]}, "longest_gap": {"chat": "Old Friend", "seconds": 18144000, "days": 210.0}, "personality": "Conversationalist", "description": "You love a good chat! You're most active on weekday evenings and have strong connections with your closest friends."};
     </script>
 
     <!-- Application Logic -->
