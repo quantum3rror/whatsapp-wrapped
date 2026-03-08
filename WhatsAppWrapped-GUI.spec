@@ -46,8 +46,8 @@ exe = EXE(
     console=False,           # no terminal window
     disable_windowed_traceback=False,
     argv_emulation=False,
-    target_arch='universal2',
-    codesign_identity=None,
+    target_arch=None,
+    codesign_identity='-',
     entitlements_file=None,
     icon='icons/icon.ico',   # Windows .exe icon
 )
