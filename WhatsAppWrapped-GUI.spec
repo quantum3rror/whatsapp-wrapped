@@ -20,9 +20,9 @@ a = Analysis(
         '_sqlite3',
         'jinja2',
         'jinja2.ext',
-        'webview.platforms.cocoa',    # macOS
-        'webview.platforms.winforms', # Windows
-        'webview.platforms.gtk',      # Linux
+        'webview.platforms.cocoa',         # macOS
+        'webview.platforms.edgechromium',  # Windows (WebView2)
+        'webview.platforms.gtk',           # Linux
     ],
     hookspath=[],
     hooksconfig={},

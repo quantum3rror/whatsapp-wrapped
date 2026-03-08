@@ -554,7 +554,7 @@ def main():
         )
 
     api.window = window
-    webview.start()
+    webview.start(gui='edgechromium' if sys.platform == 'win32' else None)
 
 
 if __name__ == '__main__':
