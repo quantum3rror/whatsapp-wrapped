@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
-[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/lukasss123/whatsapp-wrapped)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/quantum3rror/whatsapp-wrapped)
 
 Generate Spotify Wrapped-style statistics for your WhatsApp conversations!
 This project was heavily inspired by Josh and his [video](https://www.youtube.com/watch?v=UhIxXC_5zmI) — his code is available [here](https://github.com/vuciv/imessage-wrapped).
@@ -40,7 +40,7 @@ C:\Users\<YourName>\Apple\MobileSync\Backup
 
 ## Getting Started
 
-Download the latest **WhatsApp Wrapped.app** (macOS) or **WhatsApp Wrapped.exe** (Windows) from the [Releases page](https://github.com/lukasss123/whatsapp-wrapped/releases).
+Download the latest **WhatsApp Wrapped.app** (macOS) or **WhatsApp Wrapped.exe** (Windows) from the [Releases page](https://github.com/quantum3rror/whatsapp-wrapped/releases).
 
 **macOS — first launch**
 
