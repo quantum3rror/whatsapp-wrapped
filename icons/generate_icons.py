@@ -114,20 +114,42 @@ def round_corners(img: Image.Image, radius_pct: float = 0.22) -> Image.Image:
 
 
 def build_ico(master: Image.Image):
-    """Build icon.ico — largest size first so viewers and Windows pick the best size."""
+    """Build icon.ico with all sizes stored as PNG-within-ICO.
+
+    Pillow saves smaller sizes as BMP DIBs whose alpha channel Windows
+    may not render correctly when the icon is embedded in an EXE by
+    PyInstaller. Writing raw PNG blobs into the ICO container guarantees
+    that the alpha channel (and therefore the rounded corners) survives.
+    """
+    import struct
     ordered = sorted(ICO_SIZES, reverse=True)   # 256 → 48 → 32 → 16
-    images = []
+    png_blobs = []
     for size in ordered:
         img = master.resize(size, Image.LANCZOS)
         if size[0] >= 24:                        # only round at sizes where it looks good
             img = round_corners(img)
-        images.append(img)
-    images[0].save(
-        ICONS_DIR / "icon.ico",
-        format="ICO",
-        append_images=images[1:],
-    )
-    print(f"  saved icon.ico  ({', '.join(f'{w}×{h}' for w, h in ordered)})")
+        buf = BytesIO()
+        img.save(buf, format="PNG")
+        png_blobs.append((size, buf.getvalue()))
+
+    n = len(png_blobs)
+    dir_offset = 6 + 16 * n
+    entries, data_parts = [], []
+    offset = dir_offset
+    for (w, h), data in png_blobs:
+        bw = 0 if w >= 256 else w   # 0 encodes 256 in the ICO spec
+        bh = 0 if h >= 256 else h
+        entries.append(struct.pack("<BBBBHHII", bw, bh, 0, 0, 1, 32, len(data), offset))
+        data_parts.append(data)
+        offset += len(data)
+
+    with open(ICONS_DIR / "icon.ico", "wb") as f:
+        f.write(struct.pack("<HHH", 0, 1, n))   # ICONDIR header
+        for e in entries:
+            f.write(e)
+        for d in data_parts:
+            f.write(d)
+    print(f"  saved icon.ico  ({', '.join(f'{w}x{h}' for w, h in ordered)})")
 
 
 if __name__ == "__main__":

@@ -58,3 +58,4 @@ ChatStorage.sqlite
 /db
 .mcp.json
 /.playwright-mcp
+CLAUDE.md
